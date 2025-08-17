@@ -288,6 +288,23 @@ export function getChainName(chainId: number): string {
   );
 }
 
+/**
+ * Maps chain names from agent data to chain IDs
+ * This handles the conversion between agent network preferences and actual chain IDs
+ */
+export function getChainIdsForNetwork(networkName: string): number[] {
+  const networkToChainIds: { [key: string]: number[] } = {
+    "ethereum sepolia": [SupportedChainId.ETH_SEPOLIA],
+    "base sepolia": [SupportedChainId.BASE_SEPOLIA],
+    ethereum: [SupportedChainId.ETH_MAINNET],
+    base: [SupportedChainId.BASE_MAINNET, SupportedChainId.BASE_SEPOLIA], // Include both mainnet and testnet
+    arbitrum: [SupportedChainId.ARB_MAINNET],
+    testnet: [SupportedChainId.BASE_SEPOLIA], // Map testnet to Base Sepolia for now
+  };
+
+  return networkToChainIds[networkName.toLowerCase()] || [];
+}
+
 export function getChainParameters(
   chainId: number
 ): AddEthereumChainParameter | null {

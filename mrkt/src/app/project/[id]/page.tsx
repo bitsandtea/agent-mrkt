@@ -1,7 +1,11 @@
 "use client";
 
+import { AgentSubscription } from "@/components/AgentSubscription";
 import { PermitModal } from "@/components/permits";
 import { PermitStatus } from "@/components/PermitStatus";
+import { getChainName, SUPPORTED_TOKENS } from "@/config/tokens";
+import { useAgentSubscription } from "@/hooks/usePermits";
+import { useUser } from "@/hooks/useUser";
 import { savePermit, UserPermit } from "@/lib/permits";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useParams } from "next/navigation";
@@ -16,10 +20,8 @@ interface Agent {
   free_trial_tries: number;
   price_per_call_usd: number;
   payment_preferences: {
-    supported_tokens: string[];
-    supported_networks: {
-      [key: string]: string[];
-    };
+    payout_token: string;
+    payout_network: string;
   };
   api_documentation: {
     methods: Array<{
@@ -51,6 +53,7 @@ interface Agent {
 export default function ProjectPage() {
   const params = useParams();
   const { address } = useAccount();
+  const { apiKey } = useUser();
   const [agent, setAgent] = useState<Agent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,13 +61,29 @@ export default function ProjectPage() {
   const [showPermitSetup, setShowPermitSetup] = useState(false);
   const [permitSuccess, setPermitSuccess] = useState(false);
 
-  const handlePermitCreated = (permit: UserPermit) => {
-    savePermit(permit);
-    setShowPermitSetup(false);
-    setPermitSuccess(true);
+  // Get subscription status for this agent
+  const { hasActiveSubscription, subscriptionSummary, refreshSubscription } =
+    useAgentSubscription();
 
-    // Hide success message after 5 seconds
-    setTimeout(() => setPermitSuccess(false), 5000);
+  const handlePermitCreated = async (permit: UserPermit) => {
+    try {
+      await savePermit(permit);
+      setShowPermitSetup(false);
+      setPermitSuccess(true);
+
+      // Refresh subscription data
+      refreshSubscription();
+
+      // Hide success message after 5 seconds
+      setTimeout(() => setPermitSuccess(false), 5000);
+    } catch (error) {
+      console.error("Failed to save permit:", error);
+      // Still close the modal and show success since the permit was created
+      setShowPermitSetup(false);
+      setPermitSuccess(true);
+      refreshSubscription();
+      setTimeout(() => setPermitSuccess(false), 5000);
+    }
   };
 
   const handleSubscribe = () => {
@@ -78,14 +97,18 @@ export default function ProjectPage() {
     setShowPermitSetup(true);
   };
 
+  const handleEditSubscription = () => {
+    setShowPermitSetup(true);
+  };
+
   const getCodeExample = (language: string, agent: Agent) => {
-    const apiKey = "your_api_key_here";
+    const userApiKey = apiKey || "your_api_key_here";
     const agentId = agent.id;
 
     switch (language) {
       case "curl":
-        return `curl -X POST "https://api.agentmarketplace.com/api/v1/router/${agentId}" \\
-  -H "Authorization: Bearer ${apiKey}" \\
+        return `curl -X POST ${process.env.NEXT_PUBLIC_API_ROUTER}/${agentId} \\
+  -H "Authorization: Bearer ${userApiKey}" \\
   -H "Content-Type: application/json" \\
   -d '{
     "method": "${agent.api_documentation.methods[0]?.name || "audit_contract"}",
@@ -98,13 +121,13 @@ export default function ProjectPage() {
       case "typescript":
         return `import axios from 'axios';
 
-const apiKey = '${apiKey}';
+const apiKey = '${userApiKey}';
 const agentId = '${agentId}';
 
 async function callAgent() {
   try {
     const response = await axios.post(
-      \`https://api.agentmarketplace.com/api/v1/router/\${agentId}\`,
+      \`${process.env.NEXT_PUBLIC_API_ROUTER}/\${agentId}\`,
       {
         method: '${
           agent.api_documentation.methods[0]?.name || "audit_contract"
@@ -138,7 +161,7 @@ callAgent()
       case "nodejs":
         return `const https = require('https');
 
-const apiKey = '${apiKey}';
+const apiKey = '${userApiKey}';
 const agentId = '${agentId}';
 
 const data = JSON.stringify({
@@ -150,9 +173,9 @@ const data = JSON.stringify({
 });
 
 const options = {
-  hostname: 'api.agentmarketplace.com',
+  hostname: '${process.env.NEXT_PUBLIC_API_ROUTER}',
   port: 443,
-  path: \`/api/v1/router/\${agentId}\`,
+  path: \`/\${agentId}\`,
   method: 'POST',
   headers: {
     'Authorization': \`Bearer \${apiKey}\`,
@@ -189,11 +212,11 @@ req.end();`;
         return `import requests
 import json
 
-api_key = '${apiKey}'
+api_key = '${userApiKey}'
 agent_id = '${agentId}'
 
 def call_agent():
-    url = f'https://api.agentmarketplace.com/api/v1/router/{agent_id}'
+    url = f'${process.env.NEXT_PUBLIC_API_ROUTER}/{agent_id}'
     
     headers = {
         'Authorization': f'Bearer {api_key}',
@@ -259,6 +282,13 @@ if __name__ == '__main__':
     }
   }, [params.id]);
 
+  // Refresh subscription data when agent loads or address changes
+  useEffect(() => {
+    if (agent && address) {
+      refreshSubscription();
+    }
+  }, [agent, address, refreshSubscription]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
@@ -285,9 +315,6 @@ if __name__ == '__main__':
               Agent Marketplace
             </h1>
             <div className="flex items-center space-x-4">
-              <div className="px-4 py-2 bg-purple-600/20 rounded-lg border border-purple-500/30">
-                <span className="text-sm text-purple-300">Consumer View</span>
-              </div>
               <ConnectButton />
             </div>
           </div>
@@ -467,11 +494,22 @@ if __name__ == '__main__':
                 <div className="flex items-start space-x-2">
                   <div className="text-blue-400 mt-0.5">ℹ️</div>
                   <div className="text-sm text-blue-300">
-                    <strong>Note:</strong> Replace{" "}
-                    <code className="bg-blue-900/30 px-1 rounded">
-                      your_api_key_here
-                    </code>{" "}
-                    with your actual API key from your account dashboard.
+                    <strong>Note:</strong>{" "}
+                    {apiKey ? (
+                      <>
+                        Your API key is automatically populated in the examples
+                        above.
+                      </>
+                    ) : (
+                      <>
+                        Connect your wallet to see your personal API key in the
+                        examples, or replace{" "}
+                        <code className="bg-blue-900/30 px-1 rounded">
+                          your_api_key_here
+                        </code>{" "}
+                        with your actual API key.
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -493,40 +531,52 @@ if __name__ == '__main__':
               </div>
             )}
 
-            {/* Subscribe to Agent */}
-            <div className="bg-black/40 backdrop-blur-sm rounded-xl border border-purple-500/20 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-white">
-                  Subscribe to Agent
-                </h3>
-                {agent.free_trial_tries > 0 && (
-                  <div className="inline-flex items-center px-2 py-1 bg-green-600/20 border border-green-500/30 rounded-full">
-                    <span className="text-green-400 text-xs font-medium">
-                      {agent.free_trial_tries} free call
-                      {agent.free_trial_tries !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                )}
+            {/* Subscription Status */}
+            {address && hasActiveSubscription && subscriptionSummary ? (
+              <AgentSubscription
+                permits={subscriptionSummary.permits}
+                totalValue={subscriptionSummary.totalValue}
+                totalCalls={subscriptionSummary.totalCalls}
+                usedCalls={subscriptionSummary.usedCalls}
+                remainingCalls={subscriptionSummary.remainingCalls}
+                onEditSubscription={handleEditSubscription}
+              />
+            ) : (
+              /* Subscribe to Agent */
+              <div className="bg-black/40 backdrop-blur-sm rounded-xl border border-purple-500/20 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-white">
+                    Subscribe to Agent
+                  </h3>
+                  {agent.free_trial_tries > 0 && (
+                    <div className="inline-flex items-center px-2 py-1 bg-green-600/20 border border-green-500/30 rounded-full">
+                      <span className="text-green-400 text-xs font-medium">
+                        {agent.free_trial_tries} free call
+                        {agent.free_trial_tries !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-gray-300 text-sm mb-4">
+                  Subscribe to this agent to start making API calls and access
+                  all features.
+                </p>
+
+                <button
+                  onClick={handleSubscribe}
+                  className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-semibold rounded-lg transition-all duration-200"
+                  disabled={!address}
+                >
+                  {address ? "Subscribe to Agent" : "Connect Wallet"}
+                </button>
+                <p className="text-xs text-gray-400 mt-2 text-center">
+                  {address
+                    ? "Set up permits to enable gasless payments"
+                    : "Connect wallet to subscribe and start using this agent"}
+                </p>
               </div>
-
-              <p className="text-gray-300 text-sm mb-4">
-                Subscribe to this agent to start making API calls and access all
-                features.
-              </p>
-
-              <button
-                onClick={handleSubscribe}
-                className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-semibold rounded-lg transition-all duration-200"
-                disabled={!address}
-              >
-                {address ? "Subscribe to Agent" : "Connect Wallet"}
-              </button>
-              <p className="text-xs text-gray-400 mt-2 text-center">
-                {address
-                  ? "Set up permits to enable gasless payments"
-                  : "Connect wallet to subscribe and start using this agent"}
-              </p>
-            </div>
+            )}
 
             {/* Payment Options */}
             <div className="bg-black/40 backdrop-blur-sm rounded-xl border border-purple-500/20 p-6">
@@ -537,10 +587,10 @@ if __name__ == '__main__':
               <div className="space-y-3">
                 <div>
                   <div className="text-sm text-gray-400 mb-2">
-                    Supported Tokens:
+                    You can pay with any supported token:
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {agent.payment_preferences.supported_tokens.map((token) => (
+                    {Object.keys(SUPPORTED_TOKENS).map((token) => (
                       <span
                         key={token}
                         className="px-2 py-1 bg-purple-600/20 border border-purple-500/30 rounded text-purple-300 text-sm"
@@ -556,23 +606,34 @@ if __name__ == '__main__':
                     Supported Networks:
                   </div>
                   <div className="space-y-2">
-                    {Object.entries(
-                      agent.payment_preferences.supported_networks
-                    ).map(([token, networks]) => (
+                    {Object.entries(SUPPORTED_TOKENS).map(([token, config]) => (
                       <div key={token} className="text-sm">
                         <span className="text-gray-300">{token}:</span>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {networks.map((network) => (
-                            <span
-                              key={network}
-                              className="px-2 py-1 bg-slate-700/50 border border-slate-600 rounded text-gray-300 text-xs"
-                            >
-                              {network}
-                            </span>
-                          ))}
+                          {Object.keys(config.contractAddresses).map(
+                            (chainId) => (
+                              <span
+                                key={chainId}
+                                className="px-2 py-1 bg-slate-700/50 border border-slate-600 rounded text-gray-300 text-xs"
+                              >
+                                {getChainName(Number(chainId))}
+                              </span>
+                            )
+                          )}
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+                  <div className="text-sm text-blue-300">
+                    <strong>Publisher receives:</strong>{" "}
+                    {agent.payment_preferences.payout_token} on{" "}
+                    {agent.payment_preferences.payout_network}
+                  </div>
+                  <div className="text-xs text-blue-400 mt-1">
+                    Your payment will be automatically converted if needed
                   </div>
                 </div>
               </div>

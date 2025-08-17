@@ -11,10 +11,8 @@ export interface Agent {
   free_trial_tries: number;
   price_per_call_usd: number;
   payment_preferences: {
-    supported_tokens: string[];
-    supported_networks: {
-      [key: string]: string[];
-    };
+    payout_token: string;
+    payout_network: string;
   };
   api_documentation: {
     methods: Array<{
@@ -112,12 +110,35 @@ export interface ApiCall {
   ip_address: string;
 }
 
+export interface UserPermit {
+  id: string;
+  userAddress: string;
+  token: string;
+  chainId: number;
+  spenderAddress: string;
+  amount: string; // Store as string to avoid BigInt serialization issues
+  nonce: string; // Store as string to avoid BigInt serialization issues
+  deadline: string; // Store as string to avoid BigInt serialization issues
+  signature: {
+    r: string;
+    s: string;
+    v: number;
+  };
+  status: "active" | "expired" | "revoked";
+  createdAt: number;
+  expiresAt: number;
+  maxCalls: number;
+  callsUsed: number;
+  costPerCall: number;
+}
+
 interface DatabaseSchema {
   users: User[];
   agents: Agent[];
   subscriptions: Subscription[];
   payments: Payment[];
   api_calls: ApiCall[];
+  permits: UserPermit[];
   networks: Array<Record<string, unknown>>;
   tokens: Array<Record<string, unknown>>;
 }
@@ -130,6 +151,7 @@ const db = new Low(adapter, {
   subscriptions: [],
   payments: [],
   api_calls: [],
+  permits: [],
   networks: [],
   tokens: [],
 });
@@ -153,6 +175,16 @@ export async function getAllAgents(): Promise<Agent[]> {
 export async function getUserById(id: string): Promise<User | null> {
   await db.read();
   const user = db.data.users.find((u) => u.id === id);
+  return user || null;
+}
+
+export async function getUserByWalletAddress(
+  walletAddress: string
+): Promise<User | null> {
+  await db.read();
+  const user = db.data.users.find(
+    (u) => u.wallet_address.toLowerCase() === walletAddress.toLowerCase()
+  );
   return user || null;
 }
 
@@ -229,4 +261,50 @@ export async function createUser(userData: User): Promise<User> {
   db.data.users.push(userData);
   await db.write();
   return userData;
+}
+
+// Permit database functions
+export async function createPermit(
+  permitData: UserPermit
+): Promise<UserPermit> {
+  await db.read();
+  db.data.permits.push(permitData);
+  await db.write();
+  return permitData;
+}
+
+export async function getPermitsByUser(
+  userAddress: string
+): Promise<UserPermit[]> {
+  await db.read();
+  return db.data.permits.filter(
+    (permit) => permit.userAddress.toLowerCase() === userAddress.toLowerCase()
+  );
+}
+
+export async function getPermitById(id: string): Promise<UserPermit | null> {
+  await db.read();
+  const permit = db.data.permits.find((p) => p.id === id);
+  return permit || null;
+}
+
+export async function updatePermitStatus(
+  id: string,
+  status: "active" | "expired" | "revoked"
+): Promise<UserPermit | null> {
+  await db.read();
+  const permit = db.data.permits.find((p) => p.id === id);
+
+  if (!permit) {
+    return null;
+  }
+
+  permit.status = status;
+  await db.write();
+  return permit;
+}
+
+export async function getAllPermits(): Promise<UserPermit[]> {
+  await db.read();
+  return db.data.permits;
 }

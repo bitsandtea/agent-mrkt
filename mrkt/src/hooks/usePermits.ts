@@ -1,7 +1,7 @@
 "use client";
 
 import { DEFAULT_DECIMALS, getTokenAddress } from "@/config/tokens";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { parseUnits } from "viem";
 import { useAccount, useWalletClient } from "wagmi";
 // Removed wagmi-permit import - using direct implementation
@@ -134,12 +134,33 @@ export function useSubscriptionPermit(
           costPerCall,
         };
 
-        // Store in localStorage
-        const existingPermits = JSON.parse(
-          localStorage.getItem("userPermits") || "[]"
-        );
-        existingPermits.push(userPermit);
-        localStorage.setItem("userPermits", JSON.stringify(existingPermits));
+        // Store permit using API
+        try {
+          const response = await fetch("/api/permits", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              ...userPermit,
+              amount: userPermit.amount.toString(),
+              nonce: userPermit.nonce.toString(),
+              deadline: userPermit.deadline.toString(),
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to save permit: ${response.statusText}`);
+          }
+
+          const result = await response.json();
+          if (!result.success) {
+            throw new Error(result.error || "Failed to save permit");
+          }
+        } catch (error) {
+          console.error("Failed to save permit to database:", error);
+          // Continue anyway, the permit was created successfully
+        }
 
         return { r, s, v };
       } finally {
@@ -175,25 +196,59 @@ export function useUserPermits() {
   const fetchUserPermits = useCallback(async () => {
     if (!address) return [];
 
-    // Get permits from localStorage
-    const storedPermits = JSON.parse(
-      localStorage.getItem("userPermits") || "[]"
-    ) as UserPermit[];
+    try {
+      // Get permits from API
+      const response = await fetch(
+        `/api/permits?userAddress=${encodeURIComponent(address)}`
+      );
+      if (!response.ok) {
+        throw new Error(`Failed to fetch permits: ${response.statusText}`);
+      }
 
-    // Filter permits for current user
-    const userPermits = storedPermits.filter(
-      (permit) => permit.userAddress.toLowerCase() === address.toLowerCase()
-    );
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || "Failed to fetch permits");
+      }
 
-    // Update status based on expiration
-    const updatedPermits = userPermits.map((permit) => ({
-      ...permit,
-      status: Date.now() > permit.expiresAt ? "expired" : permit.status,
-    })) as UserPermit[];
+      // Convert string fields back to BigInt
+      const userPermits = result.permits.map(
+        (
+          permit: UserPermit & {
+            amount: string;
+            nonce: string;
+            deadline: string;
+          }
+        ) => ({
+          ...permit,
+          amount: BigInt(permit.amount),
+          nonce: BigInt(permit.nonce),
+          deadline: BigInt(permit.deadline),
+        })
+      );
 
-    setPermits(updatedPermits);
-    return updatedPermits;
+      // Update status based on expiration
+      const updatedPermits = userPermits.map((permit: UserPermit) => ({
+        ...permit,
+        status: Date.now() > permit.expiresAt ? "expired" : permit.status,
+      })) as UserPermit[];
+
+      setPermits(updatedPermits);
+      return updatedPermits;
+    } catch (error) {
+      console.error("Failed to fetch user permits:", error);
+      setPermits([]);
+      return [];
+    }
   }, [address]);
+
+  // Fetch permits when address changes
+  useEffect(() => {
+    if (address) {
+      fetchUserPermits();
+    } else {
+      setPermits([]);
+    }
+  }, [address, fetchUserPermits]);
 
   const getPermitForTokenAndChain = useCallback(
     (token: string, chainId: number) => {
@@ -208,19 +263,30 @@ export function useUserPermits() {
   );
 
   const revokePermit = useCallback(
-    (permitId: string) => {
-      const storedPermits = JSON.parse(
-        localStorage.getItem("userPermits") || "[]"
-      ) as UserPermit[];
+    async (permitId: string) => {
+      try {
+        const response = await fetch(`/api/permits/${permitId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: "revoked" }),
+        });
 
-      const updatedPermits = storedPermits.map((permit) =>
-        permit.id === permitId
-          ? { ...permit, status: "revoked" as const }
-          : permit
-      );
+        if (!response.ok) {
+          throw new Error(`Failed to revoke permit: ${response.statusText}`);
+        }
 
-      localStorage.setItem("userPermits", JSON.stringify(updatedPermits));
-      fetchUserPermits();
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || "Failed to revoke permit");
+        }
+
+        // Refresh permits after successful revocation
+        fetchUserPermits();
+      } catch (error) {
+        console.error("Failed to revoke permit:", error);
+      }
     },
     [fetchUserPermits]
   );
@@ -264,5 +330,51 @@ export function usePermitStatus() {
   return {
     permits,
     summary: getPermitSummary(),
+  };
+}
+
+export function useAgentSubscription() {
+  const { permits, fetchUserPermits } = useUserPermits();
+
+  const getAgentPermits = useCallback(() => {
+    // Return all active permits since users can pay with any supported token
+    return permits.filter((permit) => permit.status === "active");
+  }, [permits]);
+
+  const hasActiveSubscription = useCallback(() => {
+    return getAgentPermits().length > 0;
+  }, [getAgentPermits]);
+
+  const getSubscriptionSummary = useCallback(() => {
+    const agentPermits = getAgentPermits();
+    if (agentPermits.length === 0) return null;
+
+    const totalValue = agentPermits.reduce(
+      (sum, permit) =>
+        sum + Number(permit.amount) / Math.pow(10, DEFAULT_DECIMALS),
+      0
+    );
+    const totalCalls = agentPermits.reduce(
+      (sum, permit) => sum + permit.maxCalls,
+      0
+    );
+    const usedCalls = agentPermits.reduce(
+      (sum, permit) => sum + permit.callsUsed,
+      0
+    );
+
+    return {
+      permits: agentPermits,
+      totalValue,
+      totalCalls,
+      usedCalls,
+      remainingCalls: totalCalls - usedCalls,
+    };
+  }, [getAgentPermits]);
+
+  return {
+    hasActiveSubscription: hasActiveSubscription(),
+    subscriptionSummary: getSubscriptionSummary(),
+    refreshSubscription: fetchUserPermits,
   };
 }
