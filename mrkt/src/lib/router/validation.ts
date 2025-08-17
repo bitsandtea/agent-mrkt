@@ -1,7 +1,11 @@
 import { getAddress } from "viem";
-import { getTokenAddress, SupportedChainId } from "../../config/tokens";
-import { ERC20_ABI } from "./abis";
-import { createPublicClient } from "./clients";
+import {
+  formatTokenAmount,
+  getTokenAddress,
+  PERMIT2_ADDRESS,
+} from "../../config/tokens";
+import { createRouterPublicClient } from "../router/clients";
+import { ERC20_ABI, PERMIT2_ABI } from "./abis";
 
 // Balance validation result interface
 export interface BalanceValidationResult {
@@ -17,6 +21,15 @@ export interface AllowanceValidationResult {
   error?: string;
 }
 
+// Permit2 validation result interface
+export interface Permit2ValidationResult {
+  hasAllowance: boolean;
+  actualAllowance: number;
+  expiration: number;
+  nonce: number;
+  error?: string;
+}
+
 // Validate on-chain balance
 export async function validateOnChainBalance(
   userAddress: string,
@@ -26,7 +39,7 @@ export async function validateOnChainBalance(
 ): Promise<BalanceValidationResult> {
   try {
     // Get RPC client for the chain
-    const client = createPublicClient(chainId);
+    const client = createRouterPublicClient(chainId);
     if (!client) {
       return {
         hasBalance: false,
@@ -53,12 +66,11 @@ export async function validateOnChainBalance(
       args: [getAddress(userAddress)],
     });
 
-    const actualBalance = Number(balance) / 1e6; // Assuming 6 decimals for stablecoins
+    const actualBalance = formatTokenAmount(balance, token);
     const hasBalance = actualBalance >= requiredAmount;
 
     return { hasBalance, actualBalance };
   } catch (error) {
-    console.error("Error checking on-chain balance:", error);
     return {
       hasBalance: false,
       actualBalance: 0,
@@ -75,9 +87,9 @@ export async function validateAdminAllowance(
   requiredAmount: number
 ): Promise<AllowanceValidationResult> {
   try {
-    const client = createPublicClient(chainId);
+    const client = createRouterPublicClient(chainId);
     const tokenAddress = getTokenAddress(token, chainId);
-    const adminAddress = process.env.ADMIN_ADDRESS; // Backend env var
+    const adminAddress = process.env.NEXT_PUBLIC_ADMIN_ADDRESS; // Backend env var
 
     if (!client || !tokenAddress || !adminAddress) {
       return {
@@ -95,16 +107,77 @@ export async function validateAdminAllowance(
       args: [getAddress(userAddress), getAddress(adminAddress)],
     });
 
-    const actualAllowance = Number(allowance) / 1e6;
+    const actualAllowance = formatTokenAmount(allowance, token);
     const hasAllowance = actualAllowance >= requiredAmount;
 
     return { hasAllowance, actualAllowance };
   } catch (error) {
-    console.error("Error checking admin allowance:", error);
     return {
       hasAllowance: false,
       actualAllowance: 0,
       error: "Failed to check allowance",
+    };
+  }
+}
+
+// Validate Permit2 allowance (signature-based approvals)
+export async function validatePermit2Allowance(
+  userAddress: string,
+  token: string,
+  chainId: number,
+  spenderAddress: string,
+  requiredAmount: number
+): Promise<Permit2ValidationResult> {
+  try {
+    const client = createRouterPublicClient(chainId);
+    const tokenAddress = getTokenAddress(token, chainId);
+
+    if (!client || !tokenAddress) {
+      return {
+        hasAllowance: false,
+        actualAllowance: 0,
+        expiration: 0,
+        nonce: 0,
+        error: "Configuration error",
+      };
+    }
+
+    // Check Permit2 allowance
+    console.log("checking permit 2 allowance", {
+      usr: userAddress,
+      token: tokenAddress,
+      spender: spenderAddress,
+    });
+    const allowanceData = await client.readContract({
+      address: getAddress(PERMIT2_ADDRESS),
+      abi: PERMIT2_ABI,
+      functionName: "allowance",
+      args: [
+        getAddress(userAddress),
+        getAddress(tokenAddress),
+        getAddress(spenderAddress),
+      ],
+    });
+
+    const [amount, expiration, nonce] = allowanceData;
+    const actualAllowance = formatTokenAmount(amount, token);
+    const currentTime = Math.floor(Date.now() / 1000);
+    const hasAllowance =
+      actualAllowance >= requiredAmount && Number(expiration) > currentTime;
+
+    return {
+      hasAllowance,
+      actualAllowance,
+      expiration: Number(expiration),
+      nonce: Number(nonce),
+    };
+  } catch (error) {
+    return {
+      hasAllowance: false,
+      actualAllowance: 0,
+      expiration: 0,
+      nonce: 0,
+      error: "Failed to check Permit2 allowance",
     };
   }
 }

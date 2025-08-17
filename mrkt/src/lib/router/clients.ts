@@ -10,7 +10,7 @@ import { baseSepolia, sepolia } from "viem/chains";
 import { RPC_URLS, SupportedChainId } from "../../config/tokens";
 
 // Create public client for reading blockchain data
-export function createPublicClient(chainId: number): PublicClient | null {
+export function createRouterPublicClient(chainId: number): PublicClient | null {
   switch (chainId) {
     case SupportedChainId.BASE_SEPOLIA:
       return createPublicClient({
@@ -28,7 +28,7 @@ export function createPublicClient(chainId: number): PublicClient | null {
 }
 
 // Create wallet client for writing transactions
-export function createWalletClient(
+export function createRouterWalletClient(
   chainId: number,
   privateKey: string
 ): WalletClient | null {

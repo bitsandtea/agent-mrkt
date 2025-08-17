@@ -171,21 +171,33 @@ export const CHAIN_IDS_TO_USDC_ADDRESSES = {
 /**
  * Map of supported chains to Token Messenger contract addresses (CCTP v2)
  */
-export const CHAIN_IDS_TO_TOKEN_MESSENGER_ADDRESSES = {
+export const CHAIN_IDS_TO_TOKEN_MESSENGER_ADDRESSES: Record<
+  SupportedChainId,
+  string
+> = {
   [SupportedChainId.ETH_SEPOLIA]: "0x8fe6b999dc680ccfdd5bf7eb0974218be2542daa",
   // [SupportedChainId.AVAX_FUJI]: "0x8fe6b999dc680ccfdd5bf7eb0974218be2542daa",
   // [SupportedChainId.ARB_SEPOLIA]: "0x8fe6b999dc680ccfdd5bf7eb0974218be2542daa",
   [SupportedChainId.BASE_SEPOLIA]: "0x8fe6b999dc680ccfdd5bf7eb0974218be2542daa",
+  [SupportedChainId.ETH_MAINNET]: "0x8fe6b999dc680ccfdd5bf7eb0974218be2542daa",
+  [SupportedChainId.ARB_MAINNET]: "0x8fe6b999dc680ccfdd5bf7eb0974218be2542daa",
+  [SupportedChainId.BASE_MAINNET]: "0x8fe6b999dc680ccfdd5bf7eb0974218be2542daa",
 };
 
 /**
  * Map of supported chains to Message Transmitter contract addresses (CCTP v2)
  */
-export const CHAIN_IDS_TO_MESSAGE_TRANSMITTER_ADDRESSES = {
+export const CHAIN_IDS_TO_MESSAGE_TRANSMITTER_ADDRESSES: Record<
+  SupportedChainId,
+  string
+> = {
   [SupportedChainId.ETH_SEPOLIA]: "0xe737e5cebeeba77efe34d4aa090756590b1ce275",
   // [SupportedChainId.AVAX_FUJI]: "0xe737e5cebeeba77efe34d4aa090756590b1ce275",
   // [SupportedChainId.ARB_SEPOLIA]: "0xe737e5cebeeba77efe34d4aa090756590b1ce275",
   [SupportedChainId.BASE_SEPOLIA]: "0xe737e5cebeeba77efe34d4aa090756590b1ce275",
+  [SupportedChainId.ETH_MAINNET]: "0xe737e5cebeeba77efe34d4aa090756590b1ce275",
+  [SupportedChainId.ARB_MAINNET]: "0xe737e5cebeeba77efe34d4aa090756590b1ce275",
+  [SupportedChainId.BASE_MAINNET]: "0xe737e5cebeeba77efe34d4aa090756590b1ce275",
 };
 
 /**
@@ -233,6 +245,12 @@ export function getDestinationDomain(
 }
 
 export const DEFAULT_DECIMALS = 6; // USDC
+
+/**
+ * Permit2 contract address (same across all networks)
+ * https://github.com/Uniswap/permit2
+ */
+export const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 
 /**
  * RPC URLs for supported chains
@@ -372,4 +390,45 @@ export function getChainParameters(
       SupportedChainIdHex[chainIdHex as keyof typeof SupportedChainIdHex]
     ] || null
   );
+}
+
+/**
+ * Decimal utility functions for token amounts
+ */
+
+/**
+ * Get the number of decimals for a given token
+ */
+export function getTokenDecimals(token: string): number {
+  const tokenConfig = SUPPORTED_TOKENS[token as keyof typeof SUPPORTED_TOKENS];
+  return tokenConfig?.decimals || DEFAULT_DECIMALS;
+}
+
+/**
+ * Convert a token amount from wei (smallest unit) to human-readable format
+ */
+export function formatTokenAmount(
+  amount: bigint | string | number,
+  token: string
+): number {
+  const decimals = getTokenDecimals(token);
+  const divisor = Math.pow(10, decimals);
+  return Number(amount) / divisor;
+}
+
+/**
+ * Convert a human-readable token amount to wei (smallest unit)
+ */
+export function parseTokenAmount(amount: number, token: string): bigint {
+  const decimals = getTokenDecimals(token);
+  const multiplier = Math.pow(10, decimals);
+  return BigInt(Math.floor(amount * multiplier));
+}
+
+/**
+ * Get the decimal multiplier for a token (10^decimals)
+ */
+export function getTokenMultiplier(token: string): number {
+  const decimals = getTokenDecimals(token);
+  return Math.pow(10, decimals);
 }

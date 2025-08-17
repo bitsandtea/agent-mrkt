@@ -1,5 +1,6 @@
 "use client";
 
+import { parseTokenAmount } from "@/config/tokens";
 import { useSubscriptionPermit } from "@/lib/permits/hooks";
 import { UserPermit } from "@/lib/permits/types";
 import { useState } from "react";
@@ -69,7 +70,7 @@ export function PermitSlider({
         token: selectedToken,
         chainId: selectedNetwork,
         spenderAddress: process.env.NEXT_PUBLIC_ADMIN_ADDRESS!,
-        amount: BigInt(currentAmount * Math.pow(10, 6)), // USDC has 6 decimals
+        amount: parseTokenAmount(currentAmount, selectedToken),
         nonce: permitResult.nonce || BigInt(0), // Use the fetched nonce
         deadline: BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60),
         signature: {

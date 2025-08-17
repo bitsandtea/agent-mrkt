@@ -150,6 +150,19 @@ export class CCTPService {
     params: DepositForBurnParams,
     privateKey?: string
   ): Promise<{ transactionHash: string; messageHash?: string }> {
+    const logPrefix = `[CCTP-SERVICE-DEPOSIT]`;
+
+    console.log(`${logPrefix} Starting depositForBurn on chain ${chainId}:`, {
+      chainId,
+      amount: params.amount.toString(),
+      destinationDomain: params.destinationDomain,
+      mintRecipient: params.mintRecipient,
+      burnToken: params.burnToken,
+      transferType: params.transferType || "standard",
+      hasPrivateKey: !!privateKey,
+      timestamp: new Date().toISOString(),
+    });
+
     try {
       const {
         amount,
@@ -167,9 +180,34 @@ export class CCTPService {
 
       const contractAddress = getTokenMessengerContractAddress(chainId);
 
+      console.log(`${logPrefix} CCTP v2 parameters calculated:`, {
+        finalityThreshold,
+        maxFee: maxFee.toString(),
+        hookData,
+        contractAddress,
+        mintRecipientBytes32: addressToBytes32(mintRecipient),
+      });
+
       if (privateKey) {
         // Server-side execution with private key
+        console.log(
+          `${logPrefix} Creating wallet client for server-side execution`
+        );
         const walletClient = this.createWalletClient(chainId, privateKey);
+
+        console.log(`${logPrefix} Executing depositForBurn contract call:`, {
+          contractAddress,
+          functionName: "depositForBurn",
+          args: {
+            amount: amount.toString(),
+            destinationDomain,
+            mintRecipient: addressToBytes32(mintRecipient),
+            burnToken,
+            hookData,
+            maxFee: maxFee.toString(),
+            finalityThreshold,
+          },
+        });
 
         const hash = await walletClient.writeContract({
           address: contractAddress as `0x${string}`,
@@ -186,9 +224,19 @@ export class CCTPService {
           ],
         });
 
+        console.log(`${logPrefix} ✅ DepositForBurn transaction submitted:`, {
+          transactionHash: hash,
+          chainId,
+          realTransaction: true,
+        });
+
         return { transactionHash: hash };
       } else {
         // Client-side execution - return encoded data for frontend
+        console.log(
+          `${logPrefix} Encoding depositForBurn data for client-side execution`
+        );
+
         const data = encodeFunctionData({
           abi: TOKEN_MESSENGER_ABI,
           functionName: "depositForBurn",
@@ -203,11 +251,28 @@ export class CCTPService {
           ],
         });
 
+        console.log(
+          `${logPrefix} ✅ DepositForBurn data encoded for frontend:`,
+          {
+            encodedData: data,
+            contractAddress,
+            chainId,
+          }
+        );
+
         return {
           transactionHash: data, // Return encoded data for frontend to execute
         };
       }
     } catch (error) {
+      console.error(`${logPrefix} DepositForBurn execution failed:`, {
+        error: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+        chainId,
+        params,
+        hasPrivateKey: !!privateKey,
+      });
+
       throw new Error(
         `DepositForBurn failed: ${
           error instanceof Error ? error.message : "Unknown error"
@@ -224,13 +289,41 @@ export class CCTPService {
     params: ReceiveMessageParams,
     privateKey?: string
   ): Promise<{ transactionHash: string }> {
+    const logPrefix = `[CCTP-SERVICE-RECEIVE]`;
+
+    console.log(`${logPrefix} Starting receiveMessage on chain ${chainId}:`, {
+      chainId,
+      messageLength: params.message.length,
+      attestationLength: params.attestation.length,
+      hasPrivateKey: !!privateKey,
+      timestamp: new Date().toISOString(),
+    });
+
     try {
       const { message, attestation } = params;
       const contractAddress = getMessageTransmitterContractAddress(chainId);
 
+      console.log(`${logPrefix} Message Transmitter contract details:`, {
+        contractAddress,
+        messagePreview: `${message.slice(0, 20)}...${message.slice(-10)}`,
+        attestationPreview: `${attestation.slice(0, 20)}...${attestation.slice(
+          -10
+        )}`,
+      });
+
       if (privateKey) {
         // Server-side execution with private key
+        console.log(
+          `${logPrefix} Creating wallet client for server-side execution`
+        );
         const walletClient = this.createWalletClient(chainId, privateKey);
+
+        console.log(`${logPrefix} Executing receiveMessage contract call:`, {
+          contractAddress,
+          functionName: "receiveMessage",
+          messageLength: message.length,
+          attestationLength: attestation.length,
+        });
 
         const hash = await walletClient.writeContract({
           address: contractAddress as `0x${string}`,
@@ -239,20 +332,48 @@ export class CCTPService {
           args: [message, attestation],
         });
 
+        console.log(`${logPrefix} ✅ ReceiveMessage transaction submitted:`, {
+          transactionHash: hash,
+          chainId,
+          realTransaction: true,
+        });
+
         return { transactionHash: hash };
       } else {
         // Client-side execution - return encoded data for frontend
+        console.log(
+          `${logPrefix} Encoding receiveMessage data for client-side execution`
+        );
+
         const data = encodeFunctionData({
           abi: MESSAGE_TRANSMITTER_ABI,
           functionName: "receiveMessage",
           args: [message, attestation],
         });
 
+        console.log(
+          `${logPrefix} ✅ ReceiveMessage data encoded for frontend:`,
+          {
+            encodedData: `${data.slice(0, 20)}...${data.slice(-10)}`,
+            contractAddress,
+            chainId,
+          }
+        );
+
         return {
           transactionHash: data, // Return encoded data for frontend to execute
         };
       }
     } catch (error) {
+      console.error(`${logPrefix} ReceiveMessage execution failed:`, {
+        error: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+        chainId,
+        messageLength: params.message.length,
+        attestationLength: params.attestation.length,
+        hasPrivateKey: !!privateKey,
+      });
+
       throw new Error(
         `ReceiveMessage failed: ${
           error instanceof Error ? error.message : "Unknown error"
@@ -278,10 +399,28 @@ export class CCTPService {
     valid: boolean;
     error?: string;
   } {
+    const logPrefix = `[CCTP-SERVICE-VALIDATION]`;
     const { sourceChainId, targetChainId, token, amount } = params;
+
+    console.log(`${logPrefix} Validating CCTP transfer parameters:`, {
+      sourceChainId,
+      targetChainId,
+      token,
+      amount,
+      sender: params.sender,
+      recipient: params.recipient,
+      timestamp: new Date().toISOString(),
+    });
 
     // CCTP v2 only supports USDC for cross-chain transfers
     if (token !== "USDC") {
+      console.log(
+        `${logPrefix} ❌ Token validation failed: Only USDC supported for cross-chain`,
+        {
+          providedToken: token,
+          supportedTokens: ["USDC"],
+        }
+      );
       return {
         valid: false,
         error: `CCTP v2 only supports USDC for cross-chain transfers. ${token} can only be used for same-chain payments.`,
@@ -292,7 +431,23 @@ export class CCTPService {
     const sourceDomain = getDestinationDomain(sourceChainId);
     const targetDomain = getDestinationDomain(targetChainId);
 
-    if (!sourceDomain || !targetDomain) {
+    console.log(`${logPrefix} Chain domain validation:`, {
+      sourceChainId,
+      sourceDomain,
+      targetChainId,
+      targetDomain,
+    });
+
+    if (sourceDomain === null || targetDomain === null) {
+      console.log(
+        `${logPrefix} ❌ Chain validation failed: Unsupported chain for CCTP`,
+        {
+          sourceChainId,
+          sourceDomain,
+          targetChainId,
+          targetDomain,
+        }
+      );
       return { valid: false, error: "Unsupported chain for CCTP transfer" };
     }
 
@@ -300,7 +455,20 @@ export class CCTPService {
     const sourceTokenAddress = getTokenAddress(token, sourceChainId);
     const targetTokenAddress = getTokenAddress(token, targetChainId);
 
+    console.log(`${logPrefix} Token address validation:`, {
+      token,
+      sourceChainId,
+      sourceTokenAddress,
+      targetChainId,
+      targetTokenAddress,
+    });
+
     if (!sourceTokenAddress || !targetTokenAddress) {
+      console.log(`${logPrefix} ❌ Token address validation failed:`, {
+        token,
+        sourceTokenAddress,
+        targetTokenAddress,
+      });
       return {
         valid: false,
         error: `${token} not supported on one or both chains`,
@@ -310,13 +478,31 @@ export class CCTPService {
     // Validate amount
     try {
       const amountBigInt = parseAmount(amount, 6); // USDC has 6 decimals
+      console.log(`${logPrefix} Amount validation:`, {
+        originalAmount: amount,
+        parsedAmount: amountBigInt.toString(),
+        decimals: 6,
+      });
+
       if (amountBigInt <= BigInt(0)) {
+        console.log(
+          `${logPrefix} ❌ Amount validation failed: Amount must be greater than 0`,
+          {
+            amount,
+            parsedAmount: amountBigInt.toString(),
+          }
+        );
         return { valid: false, error: "Amount must be greater than 0" };
       }
-    } catch {
+    } catch (error) {
+      console.log(`${logPrefix} ❌ Amount parsing failed:`, {
+        amount,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
       return { valid: false, error: "Invalid amount format" };
     }
 
+    console.log(`${logPrefix} ✅ All validations passed - transfer is valid`);
     return { valid: true };
   }
 
@@ -391,15 +577,48 @@ export class CCTPService {
     messageHash: string,
     maxWaitTimeMs: number = 20 * 60 * 1000 // 20 minutes
   ): Promise<{ success: boolean; attestation?: string; error?: string }> {
+    const logPrefix = `[CCTP-SERVICE-ATTESTATION]`;
+    const maxAttempts = Math.floor(maxWaitTimeMs / 2000);
+
+    console.log(`${logPrefix} Starting attestation polling:`, {
+      messageHash,
+      maxWaitTimeMs,
+      maxAttempts,
+      intervalMs: 2000,
+      estimatedMaxTime: `${Math.floor(maxWaitTimeMs / 60000)} minutes`,
+      timestamp: new Date().toISOString(),
+    });
+
     try {
       const attestation = await pollAttestationPromise(
         messageHash,
-        Math.floor(maxWaitTimeMs / 2000), // Convert to attempts (2s intervals)
+        maxAttempts, // Convert to attempts (2s intervals)
         2000
+      );
+
+      console.log(
+        `${logPrefix} ✅ Attestation polling completed successfully:`,
+        {
+          messageHash,
+          attestationLength: attestation.length,
+          attestationPreview: `${attestation.slice(
+            0,
+            50
+          )}...${attestation.slice(-20)}`,
+          totalWaitTime: `< ${Math.floor(maxWaitTimeMs / 60000)} minutes`,
+        }
       );
 
       return { success: true, attestation };
     } catch (error) {
+      console.error(`${logPrefix} Attestation polling failed:`, {
+        messageHash,
+        error: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+        maxWaitTimeMs,
+        maxAttempts,
+      });
+
       return {
         success: false,
         error: error instanceof Error ? error.message : "Attestation failed",
@@ -442,11 +661,11 @@ export class CCTPService {
   static estimateTransferFees(
     sourceChainId: SupportedChainId,
     targetChainId: SupportedChainId,
-    amount: string
+    _amount: string
   ): { sourceFee: string; targetFee: string; totalFee: string } {
     // CCTP doesn't charge protocol fees, only gas fees
     // These are rough estimates and should be calculated dynamically
-    // Note: amount parameter not used in current implementation but kept for future fee calculations
+    // Note: _amount parameter not used in current implementation but kept for future fee calculations
     const sourceGasFee =
       sourceChainId === SupportedChainId.ETH_SEPOLIA ? "0.01" : "0.001"; // ETH vs Base
     const targetGasFee =

@@ -106,10 +106,11 @@
       "description": "Advanced AI agent that performs comprehensive security audits of smart contracts. Analyzes Solidity code for vulnerabilities, gas optimization opportunities, and best practice compliance. Generates detailed audit reports with severity classifications and remediation recommendations.",
       "api_endpoint": "http://localhost:3000/api/mock-audit",
       "free_trial_tries": 3,
+      "publisher_wallet_address": "0x5ccfafd09893ed1700e65d0d8ff0bfc2d9d98771",
       "price_per_call_usd": 0.01,
       "payment_preferences": {
         "payout_token": "USDC",
-        "payout_network": "base"
+        "payout_network": "ethereum"
       },
       "api_documentation": {
         "methods": [
@@ -332,46 +333,16 @@
   ],
   "subscriptions": [
     {
-      "id": "sub_001",
-      "user_id": "user_002",
-      "agent_id": "agent_001",
-      "status": "active",
-      "free_trials_remaining": 2,
-      "free_trials_used": 1,
-      "total_paid_calls": 15,
-      "total_spent_usd": 37.5,
-      "subscription_date": "2024-01-18T09:15:00Z",
-      "last_used": "2024-01-22T16:45:00Z",
-      "auto_renew": true,
-      "payment_token": "USDC",
-      "payment_network": "arbitrum"
-    },
-    {
-      "id": "sub_1755396126760_vumtp8s52",
+      "id": "sub_1755406300937_g2dyinkga",
       "user_id": "user_004",
       "agent_id": "agent_001",
       "status": "active",
       "free_trials_remaining": 0,
-      "free_trials_used": 3,
+      "free_trials_used": 2,
       "total_paid_calls": 0,
       "total_spent_usd": 0,
-      "subscription_date": "2025-08-17T02:02:06.760Z",
-      "last_used": "2025-08-17T03:17:51.588Z",
-      "auto_renew": true,
-      "payment_token": "USDC",
-      "payment_network": "base"
-    },
-    {
-      "id": "sub_1755396406467_0c8s5bxy0",
-      "user_id": "user_004",
-      "agent_id": "agent_001",
-      "status": "active",
-      "free_trials_remaining": 3,
-      "free_trials_used": 0,
-      "total_paid_calls": 0,
-      "total_spent_usd": 0,
-      "subscription_date": "2025-08-17T02:06:46.467Z",
-      "last_used": "2025-08-17T02:06:46.467Z",
+      "subscription_date": "2025-08-17T04:51:40.937Z",
+      "last_used": "2025-08-17T04:53:02.435Z",
       "auto_renew": true,
       "payment_token": "USDC",
       "payment_network": "base"
@@ -479,6 +450,211 @@
       "charged_amount_usd": 0,
       "user_agent": "API Router v1.0",
       "ip_address": "127.0.0.1"
+    },
+    {
+      "id": "call_1755405310670_6l3qiebsh",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755396126760_vumtp8s52",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T04:35:10.670Z",
+      "response_timestamp": "2025-08-17T04:35:10.670Z",
+      "http_status": 200,
+      "response_time_ms": 6744,
+      "is_free_trial": false,
+      "charged_amount_usd": 0.01,
+      "payment_id": "payment_1755405310670",
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
+    },
+    {
+      "id": "call_1755405430504_utzhnzx4z",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755396126760_vumtp8s52",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T04:37:10.504Z",
+      "response_timestamp": "2025-08-17T04:37:10.504Z",
+      "http_status": 200,
+      "response_time_ms": 4723,
+      "is_free_trial": false,
+      "charged_amount_usd": 0.01,
+      "payment_id": "payment_1755405430504",
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
+    },
+    {
+      "id": "call_1755405922821_z2yiow2s4",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755405911076_e1wxrhsfk",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T04:45:22.821Z",
+      "response_timestamp": "2025-08-17T04:45:22.821Z",
+      "http_status": 200,
+      "response_time_ms": 6909,
+      "is_free_trial": true,
+      "charged_amount_usd": 0,
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
+    },
+    {
+      "id": "call_1755405953536_eg43fam6z",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755405911076_e1wxrhsfk",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T04:45:53.536Z",
+      "response_timestamp": "2025-08-17T04:45:53.536Z",
+      "http_status": 200,
+      "response_time_ms": 5115,
+      "is_free_trial": true,
+      "charged_amount_usd": 0,
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
+    },
+    {
+      "id": "call_1755405987243_2za3tdvbd",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755405911076_e1wxrhsfk",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T04:46:27.243Z",
+      "response_timestamp": "2025-08-17T04:46:27.243Z",
+      "http_status": 200,
+      "response_time_ms": 7468,
+      "is_free_trial": true,
+      "charged_amount_usd": 0,
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
+    },
+    {
+      "id": "call_1755406243051_vh294vogh",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755405911076_e1wxrhsfk",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T04:50:43.051Z",
+      "response_timestamp": "2025-08-17T04:50:43.051Z",
+      "http_status": 200,
+      "response_time_ms": 7318,
+      "is_free_trial": false,
+      "charged_amount_usd": 0.01,
+      "payment_id": "payment_1755406243051",
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
+    },
+    {
+      "id": "call_1755406363720_lbe5sw8qb",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755406300937_g2dyinkga",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T04:52:43.720Z",
+      "response_timestamp": "2025-08-17T04:52:43.720Z",
+      "http_status": 200,
+      "response_time_ms": 6034,
+      "is_free_trial": true,
+      "charged_amount_usd": 0,
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
+    },
+    {
+      "id": "call_1755406382058_x2owathiq",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755406300937_g2dyinkga",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T04:53:02.058Z",
+      "response_timestamp": "2025-08-17T04:53:02.058Z",
+      "http_status": 200,
+      "response_time_ms": 6412,
+      "is_free_trial": true,
+      "charged_amount_usd": 0,
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
+    },
+    {
+      "id": "call_1755406469753_mkgcmoh6e",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755406300937_g2dyinkga",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T04:54:29.753Z",
+      "response_timestamp": "2025-08-17T04:54:29.753Z",
+      "http_status": 200,
+      "response_time_ms": 6749,
+      "is_free_trial": false,
+      "charged_amount_usd": 0.01,
+      "payment_id": "payment_1755406469753",
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
+    },
+    {
+      "id": "call_1755406587752_9qr06cx6j",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755406300937_g2dyinkga",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T04:56:27.752Z",
+      "response_timestamp": "2025-08-17T04:56:27.752Z",
+      "http_status": 200,
+      "response_time_ms": 6814,
+      "is_free_trial": false,
+      "charged_amount_usd": 0.01,
+      "payment_id": "payment_1755406587752",
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
     }
   ],
   "networks": [
@@ -521,129 +697,44 @@
   ],
   "permits": [
     {
-      "id": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C-USDC-84532-1755392093470",
+      "id": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C-USDC-84532-1755406300260",
       "userAddress": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C",
       "token": "USDC",
       "chainId": 84532,
       "spenderAddress": "0x2aC4b8c91550c51a1e13910f0d325dc51bBE942C",
       "amount": "1000000",
-      "nonce": "0",
-      "deadline": "1757984093",
+      "nonce": "1",
+      "deadline": "1757998298",
       "signature": {
-        "r": "0xa552b4dff7eddb32c69c0e83db8e7feaaa36887beca2a75daba41a155c922bb6",
-        "s": "0x68a8ceaafa34cdc26c7ae9e29d6edaa2efd1ad5934e5461080d2fa492b6e3455",
-        "v": 27
-      },
-      "status": "revoked",
-      "createdAt": 1755392093470,
-      "expiresAt": 1757984093470,
-      "maxCalls": 100,
-      "callsUsed": 0,
-      "costPerCall": 0.01
-    },
-    {
-      "id": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C-USDC-84532-1755392494243",
-      "userAddress": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C",
-      "token": "USDC",
-      "chainId": 84532,
-      "spenderAddress": "0x2aC4b8c91550c51a1e13910f0d325dc51bBE942C",
-      "amount": "1000000",
-      "nonce": "0",
-      "deadline": "1757984494",
-      "signature": {
-        "r": "0xf2fffefb981a2b237d6e4625fcbc2fb82e266bfa82d2a5de27fdf540fc1f616a",
-        "s": "0x68d7333b45cd6984c68a8756558168abdc9d048fce97fb4d49e4b3d9cac05222",
+        "r": "0x1a31c56d542adc88f2805018ef8e41bc9e6c923313dcd66f4d13becf1bde96bd",
+        "s": "0x4372b82fe64107332d169cfb476fc846b8572b28544ba86aadbf0befa2420225",
         "v": 28
       },
-      "status": "revoked",
-      "createdAt": 1755392494243,
-      "expiresAt": 1757984494243,
+      "status": "active",
+      "createdAt": 1755406300260,
+      "expiresAt": 1757998298000,
       "maxCalls": 100,
       "callsUsed": 0,
       "costPerCall": 0.01
     },
     {
-      "id": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C-USDC-84532-1755396126638",
-      "userAddress": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C",
-      "token": "USDC",
-      "chainId": 84532,
-      "spenderAddress": "0x2aC4b8c91550c51a1e13910f0d325dc51bBE942C",
-      "amount": "1000000",
-      "nonce": "0",
-      "deadline": "1757988122",
-      "signature": {
-        "r": "0x327ecb50f8275d6ee053887a8f02415b49c0458a66f5170e651f4daf2ee44628",
-        "s": "0x4d2655ed3cb280920f4bac7298f43cb7f850cee5bccdbc98ec81fd158cb4af56",
-        "v": 27
-      },
-      "status": "revoked",
-      "createdAt": 1755396126638,
-      "expiresAt": 1757988122000,
-      "maxCalls": 100,
-      "callsUsed": 0,
-      "costPerCall": 0.01
-    },
-    {
-      "id": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C-USDC-84532-1755396126707",
+      "id": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C-USDC-84532-1755406300621",
       "userAddress": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C",
       "agentId": "agent_001",
       "token": "USDC",
       "chainId": 84532,
       "spenderAddress": "0x2aC4b8c91550c51a1e13910f0d325dc51bBE942C",
       "amount": "1000000",
-      "nonce": "0",
-      "deadline": "1757988126",
+      "nonce": "1",
+      "deadline": "1757998300",
       "signature": {
-        "r": "0x327ecb50f8275d6ee053887a8f02415b49c0458a66f5170e651f4daf2ee44628",
-        "s": "0x4d2655ed3cb280920f4bac7298f43cb7f850cee5bccdbc98ec81fd158cb4af56",
-        "v": 27
-      },
-      "status": "revoked",
-      "createdAt": 1755396126707,
-      "expiresAt": 1757988126707,
-      "maxCalls": 100,
-      "callsUsed": 0,
-      "costPerCall": 0.01
-    },
-    {
-      "id": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C-USDC-84532-1755396406372",
-      "userAddress": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C",
-      "token": "USDC",
-      "chainId": 84532,
-      "spenderAddress": "0x2aC4b8c91550c51a1e13910f0d325dc51bBE942C",
-      "amount": "1000000",
-      "nonce": "0",
-      "deadline": "1757988405",
-      "signature": {
-        "r": "0xb4961917c18c2d0b9e2e4cd9f3c173379c9ae5326d793148da632948ee3f819f",
-        "s": "0x7b6e8fb44e5ffc48a1efbd3ff1dde480d3771a48aae5cd90bc45ae5e0354b2aa",
+        "r": "0x1a31c56d542adc88f2805018ef8e41bc9e6c923313dcd66f4d13becf1bde96bd",
+        "s": "0x4372b82fe64107332d169cfb476fc846b8572b28544ba86aadbf0befa2420225",
         "v": 28
       },
       "status": "active",
-      "createdAt": 1755396406372,
-      "expiresAt": 1757988405000,
-      "maxCalls": 100,
-      "callsUsed": 0,
-      "costPerCall": 0.01
-    },
-    {
-      "id": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C-USDC-84532-1755396406414",
-      "userAddress": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C",
-      "agentId": "agent_001",
-      "token": "USDC",
-      "chainId": 84532,
-      "spenderAddress": "0x2aC4b8c91550c51a1e13910f0d325dc51bBE942C",
-      "amount": "1000000",
-      "nonce": "0",
-      "deadline": "1757988406",
-      "signature": {
-        "r": "0xb4961917c18c2d0b9e2e4cd9f3c173379c9ae5326d793148da632948ee3f819f",
-        "s": "0x7b6e8fb44e5ffc48a1efbd3ff1dde480d3771a48aae5cd90bc45ae5e0354b2aa",
-        "v": 28
-      },
-      "status": "active",
-      "createdAt": 1755396406414,
-      "expiresAt": 1757988406414,
+      "createdAt": 1755406300621,
+      "expiresAt": 1757998300621,
       "maxCalls": 100,
       "callsUsed": 0,
       "costPerCall": 0.01

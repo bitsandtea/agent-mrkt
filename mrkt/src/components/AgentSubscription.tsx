@@ -13,7 +13,7 @@ interface AgentSubscriptionProps {
   usedCalls: number;
   remainingCalls: number;
   onEditSubscription: () => void;
-  onPermitRevoked?: (permitId: string) => void;
+  onPermitRevoked?: (permitId: string) => Promise<void> | void;
 }
 
 export function AgentSubscription({
@@ -39,8 +39,8 @@ export function AgentSubscription({
       // Gasless revocation: User signs permit with amount=0, admin executes
       await revokePermitWithOnChain(permit);
 
-      // Notify parent component
-      onPermitRevoked?.(permit.id);
+      // Notify parent component to refresh data
+      await onPermitRevoked?.(permit.id);
     } catch (error) {
       console.error("Failed to revoke permit:", error);
       // You might want to show a toast notification here

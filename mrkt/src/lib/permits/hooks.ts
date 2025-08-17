@@ -1,6 +1,10 @@
 "use client";
 
-import { DEFAULT_DECIMALS, getTokenAddress } from "@/config/tokens";
+import {
+  DEFAULT_DECIMALS,
+  getTokenAddress,
+  PERMIT2_ADDRESS,
+} from "@/config/tokens";
 import { useCallback, useEffect, useState } from "react";
 import {
   getAddress,
@@ -69,35 +73,38 @@ export function useSubscriptionPermit(
           }
         }
 
-        // Get token name and version for EIP-712 domain
-        const { tokenName, version } = getTokenDomainInfo(token, chainId);
-
-        // EIP-712 domain for permit
+        // EIP-712 domain for Permit2
         const domain = {
-          name: tokenName,
-          version,
+          name: "Permit2",
           chainId,
-          verifyingContract: getAddress(contractAddress),
+          verifyingContract: getAddress(PERMIT2_ADDRESS),
         };
 
-        // EIP-712 types for permit
+        // EIP-712 types for Permit2
         const types = {
-          Permit: [
-            { name: "owner", type: "address" },
+          PermitSingle: [
+            { name: "details", type: "PermitDetails" },
             { name: "spender", type: "address" },
-            { name: "value", type: "uint256" },
-            { name: "nonce", type: "uint256" },
-            { name: "deadline", type: "uint256" },
+            { name: "sigDeadline", type: "uint256" },
+          ],
+          PermitDetails: [
+            { name: "token", type: "address" },
+            { name: "amount", type: "uint160" },
+            { name: "expiration", type: "uint48" },
+            { name: "nonce", type: "uint48" },
           ],
         };
 
-        // Permit message
+        // Permit2 message
         const message = {
-          owner: getAddress(address),
+          details: {
+            token: getAddress(contractAddress),
+            amount: amount,
+            expiration: deadline,
+            nonce: currentNonce,
+          },
           spender: getAddress(spenderAddress),
-          value: amount,
-          nonce: currentNonce,
-          deadline,
+          sigDeadline: deadline,
         };
 
         // Sign the permit using wallet client
@@ -105,7 +112,7 @@ export function useSubscriptionPermit(
           account: address,
           domain,
           types,
-          primaryType: "Permit",
+          primaryType: "PermitSingle",
           message,
         });
 
@@ -406,38 +413,38 @@ export async function validatePermit(
       return false;
     }
 
-    // Get token name and version for EIP-712 domain
-    const { tokenName, version } = getTokenDomainInfo(
-      permit.token,
-      permit.chainId
-    );
-
-    // EIP-712 domain for permit
+    // EIP-712 domain for Permit2
     const domain = {
-      name: tokenName,
-      version,
+      name: "Permit2",
       chainId: permit.chainId,
-      verifyingContract: getAddress(contractAddress),
+      verifyingContract: getAddress(PERMIT2_ADDRESS),
     };
 
-    // EIP-712 types for permit
+    // EIP-712 types for Permit2
     const types = {
-      Permit: [
-        { name: "owner", type: "address" },
+      PermitSingle: [
+        { name: "details", type: "PermitDetails" },
         { name: "spender", type: "address" },
-        { name: "value", type: "uint256" },
-        { name: "nonce", type: "uint256" },
-        { name: "deadline", type: "uint256" },
+        { name: "sigDeadline", type: "uint256" },
+      ],
+      PermitDetails: [
+        { name: "token", type: "address" },
+        { name: "amount", type: "uint160" },
+        { name: "expiration", type: "uint48" },
+        { name: "nonce", type: "uint48" },
       ],
     };
 
-    // Permit message
+    // Permit2 message
     const message = {
-      owner: getAddress(permit.userAddress),
+      details: {
+        token: getAddress(contractAddress),
+        amount: permit.amount,
+        expiration: permit.deadline,
+        nonce: permit.nonce,
+      },
       spender: getAddress(permit.spenderAddress),
-      value: permit.amount,
-      nonce: permit.nonce,
-      deadline: permit.deadline,
+      sigDeadline: permit.deadline,
     };
 
     // Reconstruct the signature
@@ -449,7 +456,7 @@ export async function validatePermit(
     const recoveredAddress = await recoverTypedDataAddress({
       domain,
       types,
-      primaryType: "Permit",
+      primaryType: "PermitSingle",
       message,
       signature,
     });
@@ -510,28 +517,43 @@ export async function fetchCurrentNonce(
 ): Promise<bigint> {
   try {
     const contractAddress = getTokenAddress(token, chainId);
+
     if (!contractAddress || !publicClient) {
       throw new Error("Contract address or public client not available");
     }
 
-    const nonce = await publicClient.readContract({
-      address: getAddress(contractAddress),
+    // Get Permit2 allowance data which includes the nonce
+    const allowanceData = await publicClient.readContract({
+      address: getAddress(PERMIT2_ADDRESS),
       abi: [
         {
-          inputs: [{ name: "owner", type: "address" }],
-          name: "nonces",
-          outputs: [{ name: "", type: "uint256" }],
+          inputs: [
+            { name: "owner", type: "address" },
+            { name: "token", type: "address" },
+            { name: "spender", type: "address" },
+          ],
+          name: "allowance",
+          outputs: [
+            { name: "amount", type: "uint160" },
+            { name: "expiration", type: "uint48" },
+            { name: "nonce", type: "uint48" },
+          ],
           stateMutability: "view",
           type: "function",
         },
       ],
-      functionName: "nonces",
-      args: [getAddress(userAddress)],
+      functionName: "allowance",
+      args: [
+        getAddress(userAddress),
+        getAddress(contractAddress),
+        getAddress(ADMIN_ADDRESS),
+      ],
     });
 
-    return nonce;
+    const [, , nonce] = allowanceData;
+    return BigInt(nonce);
   } catch (error) {
-    console.error("Failed to fetch nonce:", error);
+    console.error("Failed to fetch Permit2 nonce:", error);
     return BigInt(0);
   }
 }
@@ -647,7 +669,7 @@ export function useUserPermits() {
         await revokePermitOnChain(permit);
 
         // Then refresh permits to reflect the change
-        fetchUserPermits();
+        await fetchUserPermits();
       } catch (error) {
         console.error("Failed to revoke permit on-chain:", error);
         throw error;

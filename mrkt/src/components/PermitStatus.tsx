@@ -1,5 +1,6 @@
 "use client";
 
+import { formatTokenAmount } from "@/config/tokens";
 import { usePermitStatus } from "@/lib/permits/hooks";
 import { useEffect, useMemo, useState } from "react";
 
@@ -35,7 +36,7 @@ export function PermitStatus() {
     totalValue: filteredPermits
       .filter((p) => p.status === "active")
       .reduce(
-        (sum, permit) => sum + Number(permit.amount) / Math.pow(10, 6),
+        (sum, permit) => sum + formatTokenAmount(permit.amount, permit.token),
         0
       ),
     totalCalls: filteredPermits
@@ -175,7 +176,7 @@ export function PermitStatus() {
 
                 <div className="text-right">
                   <div className="text-cyan-400 font-semibold">
-                    ${(Number(permit.amount) / Math.pow(10, 6)).toFixed(2)}
+                    ${formatTokenAmount(permit.amount, permit.token).toFixed(2)}
                   </div>
                   <div className="text-xs text-gray-400">
                     {permit.maxCalls - permit.callsUsed} calls left
@@ -269,7 +270,10 @@ export function PermitStatus() {
 
                   <div className="text-right">
                     <div className="text-gray-400 font-semibold">
-                      ${(Number(permit.amount) / Math.pow(10, 6)).toFixed(2)}
+                      $
+                      {formatTokenAmount(permit.amount, permit.token).toFixed(
+                        2
+                      )}
                     </div>
                     <div className="text-xs text-red-400 capitalize">
                       {permit.status}

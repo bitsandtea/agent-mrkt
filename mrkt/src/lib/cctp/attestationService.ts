@@ -73,21 +73,52 @@ export const getAttestationV2 = async (
 export const getAttestation = async (
   messageHash: string
 ): Promise<Attestation | null> => {
+  const logPrefix = `[CCTP-ATTESTATION-API]`;
+
+  console.log(`${logPrefix} Fetching attestation for messageHash:`, {
+    messageHash,
+    apiUrl: `${baseURL}/attestations/${messageHash}`,
+    timestamp: new Date().toISOString(),
+  });
+
   try {
     const response = await axiosInstance.get<AttestationResponse>(
       `/attestations/${messageHash}`
     );
-    return mapAttestation(response?.data);
+
+    const attestation = mapAttestation(response?.data);
+
+    console.log(`${logPrefix} Attestation API response:`, {
+      messageHash,
+      status: attestation.status,
+      hasMessage: !!attestation.message,
+      messagePreview: attestation.message
+        ? `${attestation.message.slice(0, 20)}...${attestation.message.slice(
+            -10
+          )}`
+        : null,
+    });
+
+    return attestation;
   } catch (error) {
     // Treat 404 as pending and keep polling
     if (axios.isAxiosError(error) && error?.response?.status === 404) {
+      console.log(`${logPrefix} Attestation not ready (404) - still pending:`, {
+        messageHash,
+        status: "pending_confirmations",
+      });
+
       const response = {
         attestation: null,
         status: AttestationStatus.pending_confirmations,
       };
       return mapAttestation(response);
     } else {
-      console.error("Attestation service error:", error);
+      console.error(`${logPrefix} Attestation service error:`, {
+        messageHash,
+        error: error instanceof Error ? error.message : "Unknown error",
+        status: axios.isAxiosError(error) ? error.response?.status : "unknown",
+      });
       return null;
     }
   }
@@ -161,10 +192,36 @@ export const pollAttestation = async (
   maxAttempts: number = 30,
   intervalMs: number = 2000
 ): Promise<void> => {
+  const logPrefix = `[CCTP-ATTESTATION-POLL]`;
   let attempts = 0;
 
+  console.log(`${logPrefix} Starting attestation polling:`, {
+    messageHash,
+    maxAttempts,
+    intervalMs,
+    estimatedMaxTime: `${Math.floor(
+      (maxAttempts * intervalMs) / 60000
+    )} minutes`,
+    timestamp: new Date().toISOString(),
+  });
+
   const poll = async () => {
-    if (attempts >= maxAttempts) {
+    attempts++;
+
+    console.log(`${logPrefix} Polling attempt ${attempts}/${maxAttempts}:`, {
+      messageHash,
+      attempt: attempts,
+      remainingAttempts: maxAttempts - attempts,
+      nextPollIn: `${intervalMs / 1000}s`,
+    });
+
+    if (attempts > maxAttempts) {
+      console.error(`${logPrefix} ❌ Attestation polling timeout:`, {
+        messageHash,
+        totalAttempts: attempts - 1,
+        totalTimeMs: (attempts - 1) * intervalMs,
+        totalTimeMinutes: Math.floor(((attempts - 1) * intervalMs) / 60000),
+      });
       onError("Attestation polling timeout");
       return;
     }
@@ -172,6 +229,13 @@ export const pollAttestation = async (
     const attestation = await getAttestation(messageHash);
 
     if (!attestation) {
+      console.error(
+        `${logPrefix} ❌ Failed to fetch attestation on attempt ${attempts}:`,
+        {
+          messageHash,
+          attempt: attempts,
+        }
+      );
       onError("Failed to fetch attestation");
       return;
     }
@@ -180,11 +244,27 @@ export const pollAttestation = async (
       attestation.status === AttestationStatus.complete &&
       attestation.message
     ) {
+      console.log(`${logPrefix} ✅ Attestation completed successfully:`, {
+        messageHash,
+        totalAttempts: attempts,
+        totalTimeMs: attempts * intervalMs,
+        totalTimeMinutes: Math.floor((attempts * intervalMs) / 60000),
+        attestationLength: attestation.message.length,
+      });
       onComplete(attestation.message);
       return;
     }
 
-    attempts++;
+    console.log(
+      `${logPrefix} Attestation still pending, scheduling next poll:`,
+      {
+        messageHash,
+        status: attestation.status,
+        attempt: attempts,
+        nextPollIn: `${intervalMs / 1000}s`,
+      }
+    );
+
     setTimeout(poll, intervalMs);
   };
 

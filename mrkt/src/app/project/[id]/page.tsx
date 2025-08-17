@@ -86,7 +86,6 @@ export default function ProjectPage() {
   };
 
   const handleSubscribe = () => {
-    console.log("Subscribe button clicked!", { address, showPermitSetup });
     if (!address) {
       console.log("No wallet address, showing wallet connection prompt");
       // Show wallet connection prompt
@@ -100,9 +99,9 @@ export default function ProjectPage() {
     setShowPermitSetup(true);
   };
 
-  const handlePermitRevoked = (permitId: string) => {
+  const handlePermitRevoked = async (permitId: string) => {
     // Refresh subscription data after permit revocation
-    refreshSubscription();
+    await refreshSubscription();
   };
 
   const getCodeExample = (language: string, agent: Agent) => {
