@@ -128,6 +128,12 @@ export interface UserPermit {
     s: string;
     v: number;
   };
+  tokenPermitSig?: {
+    r: string;
+    s: string;
+    v: number;
+    deadline: string;
+  };
   status: "active" | "expired" | "revoked";
   createdAt: number;
   expiresAt: number;

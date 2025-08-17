@@ -7,6 +7,46 @@ import {
 import { createRouterPublicClient } from "../router/clients";
 import { ERC20_ABI, PERMIT2_ABI } from "./abis";
 
+// Custom error types for pre-transfer validation
+export class InsufficientBalanceError extends Error {
+  constructor(
+    public token: string,
+    public required: number,
+    public actual: number,
+    public userAddress: string
+  ) {
+    super(
+      `Insufficient ${token} balance: user ${userAddress} has ${actual} ${token}, needs ${required} ${token}`
+    );
+    this.name = "InsufficientBalanceError";
+  }
+}
+
+export class InsufficientPermit2AllowanceError extends Error {
+  constructor(
+    public token: string,
+    public required: number,
+    public actual: number,
+    public userAddress: string
+  ) {
+    super(
+      `Insufficient token allowance to Permit2: user ${userAddress} has approved ${actual} ${token} to Permit2 (${PERMIT2_ADDRESS}), needs ${required} ${token}. User must call approve() or permit() on the token contract.`
+    );
+    this.name = "InsufficientPermit2AllowanceError";
+  }
+}
+
+export class PreTransferValidationError extends Error {
+  constructor(
+    public validationErrors: string[],
+    public balanceCheck: BalanceValidationResult,
+    public permit2AllowanceCheck: AllowanceValidationResult
+  ) {
+    super(`Pre-transfer validation failed: ${validationErrors.join("; ")}`);
+    this.name = "PreTransferValidationError";
+  }
+}
+
 // Balance validation result interface
 export interface BalanceValidationResult {
   hasBalance: boolean;
@@ -70,7 +110,7 @@ export async function validateOnChainBalance(
     const hasBalance = actualBalance >= requiredAmount;
 
     return { hasBalance, actualBalance };
-  } catch (error) {
+  } catch {
     return {
       hasBalance: false,
       actualBalance: 0,
@@ -111,7 +151,7 @@ export async function validateAdminAllowance(
     const hasAllowance = actualAllowance >= requiredAmount;
 
     return { hasAllowance, actualAllowance };
-  } catch (error) {
+  } catch {
     return {
       hasAllowance: false,
       actualAllowance: 0,
@@ -171,7 +211,7 @@ export async function validatePermit2Allowance(
       expiration: Number(expiration),
       nonce: Number(nonce),
     };
-  } catch (error) {
+  } catch {
     return {
       hasAllowance: false,
       actualAllowance: 0,
@@ -180,4 +220,107 @@ export async function validatePermit2Allowance(
       error: "Failed to check Permit2 allowance",
     };
   }
+}
+
+// Validate user's token allowance to Permit2 contract
+export async function validateTokenToPermit2Allowance(
+  userAddress: string,
+  token: string,
+  chainId: number,
+  requiredAmount: number
+): Promise<AllowanceValidationResult> {
+  try {
+    const client = createRouterPublicClient(chainId);
+    const tokenAddress = getTokenAddress(token, chainId);
+
+    if (!client || !tokenAddress) {
+      return {
+        hasAllowance: false,
+        actualAllowance: 0,
+        error: "Configuration error",
+      };
+    }
+
+    // Check token allowance to Permit2
+    const allowance = await client.readContract({
+      address: getAddress(tokenAddress),
+      abi: ERC20_ABI,
+      functionName: "allowance",
+      args: [getAddress(userAddress), getAddress(PERMIT2_ADDRESS)],
+    });
+
+    const actualAllowance = formatTokenAmount(allowance, token);
+    const hasAllowance = actualAllowance >= requiredAmount;
+
+    return { hasAllowance, actualAllowance };
+  } catch {
+    return {
+      hasAllowance: false,
+      actualAllowance: 0,
+      error: "Failed to check token allowance to Permit2",
+    };
+  }
+}
+
+// Pre-transfer validation combining balance and allowance checks
+export interface PreTransferValidationResult {
+  isValid: boolean;
+  balanceCheck: BalanceValidationResult;
+  permit2AllowanceCheck: AllowanceValidationResult;
+  errors: string[];
+}
+
+export async function validatePreTransferRequirements(
+  userAddress: string,
+  token: string,
+  chainId: number,
+  requiredAmount: number
+): Promise<PreTransferValidationResult> {
+  const errors: string[] = [];
+
+  // Check user balance
+  const balanceCheck = await validateOnChainBalance(
+    userAddress,
+    token,
+    chainId,
+    requiredAmount
+  );
+
+  // Check token allowance to Permit2
+  const permit2AllowanceCheck = await validateTokenToPermit2Allowance(
+    userAddress,
+    token,
+    chainId,
+    requiredAmount
+  );
+
+  // Collect errors
+  if (!balanceCheck.hasBalance) {
+    errors.push(
+      `Insufficient balance: has ${balanceCheck.actualBalance} ${token}, needs ${requiredAmount} ${token}`
+    );
+  }
+
+  if (!permit2AllowanceCheck.hasAllowance) {
+    errors.push(
+      `Insufficient token allowance to Permit2: has ${permit2AllowanceCheck.actualAllowance} ${token}, needs ${requiredAmount} ${token}. User must approve Permit2 contract (${PERMIT2_ADDRESS}) to spend tokens.`
+    );
+  }
+
+  if (balanceCheck.error) {
+    errors.push(`Balance check error: ${balanceCheck.error}`);
+  }
+
+  if (permit2AllowanceCheck.error) {
+    errors.push(
+      `Permit2 allowance check error: ${permit2AllowanceCheck.error}`
+    );
+  }
+
+  return {
+    isValid: errors.length === 0,
+    balanceCheck,
+    permit2AllowanceCheck,
+    errors,
+  };
 }

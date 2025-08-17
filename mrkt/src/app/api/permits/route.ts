@@ -1,4 +1,8 @@
-import { getTokenAddress, PERMIT2_ADDRESS } from "@/config/tokens";
+import {
+  formatTokenAmount,
+  getTokenAddress,
+  PERMIT2_ADDRESS,
+} from "@/config/tokens";
 import {
   createPermit,
   createSubscription,
@@ -11,6 +15,7 @@ import {
   UserPermit,
 } from "@/lib/db";
 import { PERMIT2_ABI } from "@/lib/router/abis";
+import { validatePreTransferRequirements } from "@/lib/router/validation";
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, createWalletClient, getAddress, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -98,9 +103,115 @@ async function submitPermitOnChain(permit: UserPermit) {
     console.log(
       `⚠️  Permit nonce mismatch - skipping submission (permit has stale nonce)`
     );
-    throw new Error(
-      `Permit nonce mismatch: expected ${currentNonce}, got ${permit.nonce}`
+    console.log(
+      `   Expected nonce: ${currentNonce}, Permit nonce: ${permit.nonce}`
     );
+    console.log(
+      `   This permit was likely already used or superseded by a newer permit`
+    );
+    throw new Error(
+      `Permit nonce mismatch: expected ${currentNonce}, got ${permit.nonce}. This permit may have already been used.`
+    );
+  }
+
+  // Pre-transfer validation: check user balance and token allowance to Permit2
+  console.log(`   Validating pre-transfer requirements...`);
+  const requiredAmount = formatTokenAmount(permit.amount, permit.token);
+  const validation = await validatePreTransferRequirements(
+    permit.userAddress,
+    permit.token,
+    permit.chainId,
+    requiredAmount
+  );
+
+  // Handle missing Permit2 approval using EIP-2612 token permit
+  if (!validation.permit2AllowanceCheck.hasAllowance) {
+    console.log(
+      `⚠️  User hasn't approved Permit2 contract yet - checking for token permit...`
+    );
+
+    // Check if user provided a token permit signature for USDC → Permit2 approval
+    if (permit.tokenPermitSig) {
+      console.log(
+        `✅ Token permit signature provided - submitting USDC.permit() for Permit2 approval`
+      );
+
+      try {
+        // Submit USDC.permit() to approve Permit2 (admin pays gas, user stays gasless)
+        const tokenPermitHash = await walletClient.writeContract({
+          address: getAddress(tokenAddress),
+          abi: [
+            {
+              inputs: [
+                { name: "owner", type: "address" },
+                { name: "spender", type: "address" },
+                { name: "value", type: "uint256" },
+                { name: "deadline", type: "uint256" },
+                { name: "v", type: "uint8" },
+                { name: "r", type: "bytes32" },
+                { name: "s", type: "bytes32" },
+              ],
+              name: "permit",
+              outputs: [],
+              stateMutability: "nonpayable",
+              type: "function",
+            },
+          ],
+          functionName: "permit",
+          args: [
+            getAddress(permit.userAddress),
+            getAddress(PERMIT2_ADDRESS),
+            BigInt(
+              "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+            ), // MAX_UINT256
+            BigInt(permit.tokenPermitSig.deadline),
+            permit.tokenPermitSig.v,
+            permit.tokenPermitSig.r as `0x${string}`,
+            permit.tokenPermitSig.s as `0x${string}`,
+          ],
+        });
+
+        console.log(`✅ USDC permit submitted: ${tokenPermitHash}`);
+
+        // Wait for token permit to be mined
+        await publicClient.waitForTransactionReceipt({ hash: tokenPermitHash });
+        console.log(
+          `✅ USDC permit confirmed - Permit2 now approved to spend user's USDC`
+        );
+      } catch (tokenPermitError) {
+        console.error(`❌ Failed to submit USDC permit:`, tokenPermitError);
+        throw new Error(
+          `Failed to approve Permit2 via USDC permit: ${
+            tokenPermitError instanceof Error
+              ? tokenPermitError.message
+              : "Unknown error"
+          }`
+        );
+      }
+    } else {
+      console.log(`⚠️  No token permit signature provided`);
+      console.log(
+        `   User must approve Permit2 manually or provide tokenPermitSig for gasless approval`
+      );
+      console.log(
+        `   Proceeding with Permit2 submission - transfer may fail later without approval`
+      );
+    }
+  }
+
+  // Only fail if user has insufficient balance (critical error)
+  if (!validation.balanceCheck.hasBalance) {
+    const errorMessage = `Insufficient balance: user has ${validation.balanceCheck.actualBalance} ${permit.token}, needs ${requiredAmount} ${permit.token}`;
+    console.error(`❌ ${errorMessage}`);
+    throw new Error(errorMessage);
+  }
+
+  if (validation.isValid) {
+    console.log(`✅ Pre-transfer validation passed:`, {
+      userBalance: validation.balanceCheck.actualBalance,
+      permit2Allowance: validation.permit2AllowanceCheck.actualAllowance,
+      requiredAmount,
+    });
   }
 
   // Build the PermitSingle struct
@@ -116,8 +227,8 @@ async function submitPermitOnChain(permit: UserPermit) {
   };
   console.log(`   Permit details:`, permitSingle);
 
-  // Reconstruct the signature
-  const signature = `${permit.signature.r}${permit.signature.s.slice(
+  // Reconstruct the signature - Permit2 expects r+s+v format
+  const signature = `0x${permit.signature.r.slice(2)}${permit.signature.s.slice(
     2
   )}${permit.signature.v.toString(16).padStart(2, "0")}` as `0x${string}`;
   console.log(

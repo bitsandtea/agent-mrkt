@@ -1,15 +1,16 @@
 import { createWalletClient, getAddress, http, keccak256 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import {
+  formatTokenAmount,
   getDestinationDomain,
   getTokenAddress,
   getTokenMessengerContractAddress,
+  parseTokenAmount,
   PERMIT2_ADDRESS,
   RPC_URLS,
   SupportedChainId,
 } from "../../config/tokens";
 import { CCTPService } from "../cctp/service";
-import { parseAmount } from "../cctp/utils";
 import * as db from "../db";
 import { CrossChainPayment } from "../permits/types";
 import { ERC20_ABI, MESSAGE_SENT_EVENT_SIGNATURE, PERMIT2_ABI } from "./abis";
@@ -18,6 +19,7 @@ import {
   createRouterWalletClient,
   getViemChain,
 } from "./clients";
+import { validatePreTransferRequirements } from "./validation";
 
 // Transfer result interfaces
 export interface TransferResult {
@@ -43,6 +45,45 @@ export async function executePermitTransfer(
   const tokenAddress = getTokenAddress(permit.token, chainId);
   if (!tokenAddress) {
     throw new Error(`Token ${permit.token} not supported on chain ${chainId}`);
+  }
+
+  // Pre-transfer validation: check balance and Permit2 allowance
+  const requiredAmount = formatTokenAmount(amount, permit.token); // Convert from wei to token units
+  const validation = await validatePreTransferRequirements(
+    permit.userAddress,
+    permit.token,
+    chainId,
+    requiredAmount
+  );
+
+  if (!validation.isValid) {
+    const errorMessage = `Pre-transfer validation failed: ${validation.errors.join(
+      "; "
+    )}`;
+    console.error("[PERMIT-TRANSFER] Validation failed:", {
+      userAddress: permit.userAddress,
+      token: permit.token,
+      chainId,
+      requiredAmount,
+      errors: validation.errors,
+      balanceCheck: validation.balanceCheck,
+      permit2AllowanceCheck: validation.permit2AllowanceCheck,
+    });
+    throw new Error(errorMessage);
+  }
+
+  console.log("[PERMIT-TRANSFER] Pre-transfer validation passed:", {
+    userBalance: validation.balanceCheck.actualBalance,
+    permit2Allowance: validation.permit2AllowanceCheck.actualAllowance,
+    requiredAmount,
+  });
+
+  // Final check: Ensure user has approved Permit2 to spend their tokens
+  if (!validation.permit2AllowanceCheck.hasAllowance) {
+    throw new Error(
+      `User has not approved Permit2 contract to spend ${permit.token}. ` +
+        `User must call USDC.approve(${PERMIT2_ADDRESS}, amount) or provide tokenPermitSig for gasless approval.`
+    );
   }
 
   // Use Permit2's transferFrom function (the permit allowance was already set when the permit was submitted)
@@ -185,6 +226,36 @@ export async function executeSameChainTransfer(params: {
     nonce: params.permit.nonce.toString(),
   });
 
+  // Pre-transfer validation: check balance and Permit2 allowance
+  const validation = await validatePreTransferRequirements(
+    params.fromAddress,
+    params.token,
+    params.sourceChainId,
+    params.amount
+  );
+
+  if (!validation.isValid) {
+    const errorMessage = `${logPrefix} Pre-transfer validation failed: ${validation.errors.join(
+      "; "
+    )}`;
+    console.error(errorMessage, {
+      userAddress: params.fromAddress,
+      token: params.token,
+      chainId: params.sourceChainId,
+      requiredAmount: params.amount,
+      errors: validation.errors,
+      balanceCheck: validation.balanceCheck,
+      permit2AllowanceCheck: validation.permit2AllowanceCheck,
+    });
+    throw new Error(errorMessage);
+  }
+
+  console.log(`${logPrefix} Pre-transfer validation passed:`, {
+    userBalance: validation.balanceCheck.actualBalance,
+    permit2Allowance: validation.permit2AllowanceCheck.actualAllowance,
+    requiredAmount: params.amount,
+  });
+
   // Create wallet client for admin
   const client = createRouterPublicClient(params.sourceChainId);
   if (!client) {
@@ -206,8 +277,8 @@ export async function executeSameChainTransfer(params: {
     account,
   });
 
-  // Convert amount to token units (assuming 6 decimals for stablecoins)
-  const amountInTokenUnits = parseAmount(params.amount.toString(), 6);
+  // Convert amount to token units using proper decimals
+  const amountInTokenUnits = parseTokenAmount(params.amount, params.token);
 
   console.log(`${logPrefix} Executing transferFrom with permit:`, {
     tokenAddress,
@@ -322,7 +393,7 @@ export async function executeCCTPTransfer(params: {
       userId: "", // Will be set by caller
       sourceChainId: params.sourceChainId,
       targetChainId: params.targetChainId,
-      amount: parseAmount(params.amount.toString(), 6).toString(),
+      amount: parseTokenAmount(params.amount, params.token).toString(),
       token: params.token,
       messageHash: "", // Will be set after depositForBurn
       attestationStatus: "pending",
@@ -373,6 +444,37 @@ export async function executeCCTPTransfer(params: {
       mintRecipient: params.toAddress,
       burnToken: burnTokenAddress,
       transferType: "standard",
+    });
+
+    // Pre-transfer validation: check balance and Permit2 allowance
+    console.log(`${logPrefix} Validating pre-transfer requirements...`);
+    const validation = await validatePreTransferRequirements(
+      params.fromAddress,
+      params.token,
+      params.sourceChainId,
+      params.amount
+    );
+
+    if (!validation.isValid) {
+      const errorMessage = `${logPrefix} Pre-transfer validation failed: ${validation.errors.join(
+        "; "
+      )}`;
+      console.error(errorMessage, {
+        userAddress: params.fromAddress,
+        token: params.token,
+        chainId: params.sourceChainId,
+        requiredAmount: params.amount,
+        errors: validation.errors,
+        balanceCheck: validation.balanceCheck,
+        permit2AllowanceCheck: validation.permit2AllowanceCheck,
+      });
+      throw new Error(errorMessage);
+    }
+
+    console.log(`${logPrefix} Pre-transfer validation passed:`, {
+      userBalance: validation.balanceCheck.actualBalance,
+      permit2Allowance: validation.permit2AllowanceCheck.actualAllowance,
+      requiredAmount: params.amount,
     });
 
     // Step 1: Transfer USDC from user to admin wallet using permit

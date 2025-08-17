@@ -11,11 +11,163 @@ import {
   parseUnits,
   PublicClient,
   recoverTypedDataAddress,
+  maxUint256,
 } from "viem";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { UserPermit } from "./types";
 
 const ADMIN_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_ADDRESS as `0x${string}`;
+
+// Hook for checking and handling token allowances to Permit2
+export function useTokenPermit2Approval(token: string, chainId: number) {
+  const { data: walletClient } = useWalletClient();
+  const { address } = useAccount();
+  const publicClient = usePublicClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasApproval, setHasApproval] = useState<boolean | null>(null);
+
+  const contractAddress = getTokenAddress(token, chainId) as `0x${string}`;
+
+  // Check if user has approved Permit2 to spend their tokens
+  const checkPermit2Approval = useCallback(async () => {
+    if (!publicClient || !contractAddress || !address) {
+      return false;
+    }
+
+    try {
+      const allowance = await publicClient.readContract({
+        address: contractAddress,
+        abi: [
+          {
+            inputs: [
+              { name: "owner", type: "address" },
+              { name: "spender", type: "address" },
+            ],
+            name: "allowance",
+            outputs: [{ name: "", type: "uint256" }],
+            stateMutability: "view",
+            type: "function",
+          },
+        ],
+        functionName: "allowance",
+        args: [getAddress(address), getAddress(PERMIT2_ADDRESS)],
+      });
+
+      const hasApproval = allowance > 0n;
+      setHasApproval(hasApproval);
+      return hasApproval;
+    } catch (error) {
+      console.error("Failed to check Permit2 approval:", error);
+      setHasApproval(false);
+      return false;
+    }
+  }, [publicClient, contractAddress, address]);
+
+  // Create EIP-2612 permit signature for token -> Permit2 approval
+  const createTokenPermit = useCallback(async () => {
+    if (!walletClient || !contractAddress || !address) {
+      throw new Error("Wallet or contract not ready");
+    }
+
+    setIsLoading(true);
+    try {
+      // Get token domain info
+      const { tokenName, version } = getTokenDomainInfo(token, chainId);
+      
+      // Create deadline (30 minutes from now)
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + 30 * 60);
+
+      // Fetch current nonce for the token contract
+      let currentNonce = BigInt(0);
+      if (publicClient) {
+        try {
+          currentNonce = await publicClient.readContract({
+            address: contractAddress,
+            abi: [
+              {
+                inputs: [{ name: "owner", type: "address" }],
+                name: "nonces",
+                outputs: [{ name: "", type: "uint256" }],
+                stateMutability: "view",
+                type: "function",
+              },
+            ],
+            functionName: "nonces",
+            args: [getAddress(address)],
+          });
+        } catch (error) {
+          console.warn("Failed to fetch token nonce, using 0:", error);
+        }
+      }
+
+      // EIP-712 domain for token permit
+      const domain = {
+        name: tokenName,
+        version,
+        chainId,
+        verifyingContract: getAddress(contractAddress),
+      };
+
+      // EIP-712 types for token permit
+      const types = {
+        Permit: [
+          { name: "owner", type: "address" },
+          { name: "spender", type: "address" },
+          { name: "value", type: "uint256" },
+          { name: "nonce", type: "uint256" },
+          { name: "deadline", type: "uint256" },
+        ],
+      };
+
+      // Token permit message
+      const message = {
+        owner: getAddress(address),
+        spender: getAddress(PERMIT2_ADDRESS),
+        value: maxUint256, // Approve maximum amount
+        nonce: currentNonce,
+        deadline,
+      };
+
+      // Sign the token permit
+      const signature = await walletClient.signTypedData({
+        account: address,
+        domain,
+        types,
+        primaryType: "Permit",
+        message,
+      });
+
+      // Parse the signature into r, s, v components
+      const r = signature.slice(0, 66) as `0x${string}`;
+      const s = `0x${signature.slice(66, 130)}` as `0x${string}`;
+      const v = parseInt(signature.slice(130, 132), 16);
+
+      return {
+        r,
+        s,
+        v,
+        deadline: deadline.toString(),
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [walletClient, contractAddress, address, token, chainId, publicClient]);
+
+  // Check approval on mount and when dependencies change
+  useEffect(() => {
+    if (address && contractAddress && publicClient) {
+      checkPermit2Approval();
+    }
+  }, [address, contractAddress, publicClient, checkPermit2Approval]);
+
+  return {
+    hasApproval,
+    checkPermit2Approval,
+    createTokenPermit,
+    isLoading,
+    isReady: !!walletClient && !!contractAddress && !!address,
+  };
+}
 
 // Helper function to get token domain info
 function getTokenDomainInfo(token: string, chainId: number) {
