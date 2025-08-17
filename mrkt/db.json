@@ -655,6 +655,90 @@
       "payment_id": "payment_1755406587752",
       "user_agent": "API Router v1.0",
       "ip_address": "127.0.0.1"
+    },
+    {
+      "id": "call_1755406675196_fmenyujcj",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755406300937_g2dyinkga",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T04:57:55.196Z",
+      "response_timestamp": "2025-08-17T04:57:55.196Z",
+      "http_status": 200,
+      "response_time_ms": 5124,
+      "is_free_trial": false,
+      "charged_amount_usd": 0.01,
+      "payment_id": "payment_1755406675196",
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
+    },
+    {
+      "id": "call_1755406781919_clmnl1n08",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755406300937_g2dyinkga",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T04:59:41.919Z",
+      "response_timestamp": "2025-08-17T04:59:41.919Z",
+      "http_status": 200,
+      "response_time_ms": 7306,
+      "is_free_trial": false,
+      "charged_amount_usd": 0.01,
+      "payment_id": "payment_1755406781919",
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
+    },
+    {
+      "id": "call_1755406922721_uhuuwgq0c",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755406300937_g2dyinkga",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T05:02:02.721Z",
+      "response_timestamp": "2025-08-17T05:02:02.721Z",
+      "http_status": 200,
+      "response_time_ms": 5018,
+      "is_free_trial": false,
+      "charged_amount_usd": 0.01,
+      "payment_id": "payment_1755406922721",
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
+    },
+    {
+      "id": "call_1755407103443_vdnosqkhn",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755406300937_g2dyinkga",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T05:05:03.443Z",
+      "response_timestamp": "2025-08-17T05:05:03.443Z",
+      "http_status": 200,
+      "response_time_ms": 5968,
+      "is_free_trial": false,
+      "charged_amount_usd": 0.01,
+      "payment_id": "payment_1755407103443",
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
     }
   ],
   "networks": [

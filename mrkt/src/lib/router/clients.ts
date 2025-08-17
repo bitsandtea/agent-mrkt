@@ -32,7 +32,12 @@ export function createRouterWalletClient(
   chainId: number,
   privateKey: string
 ): WalletClient | null {
-  const account = privateKeyToAccount(privateKey as `0x${string}`);
+  // Ensure private key has 0x prefix and is properly formatted
+  const formattedPrivateKey = privateKey.startsWith("0x")
+    ? (privateKey as `0x${string}`)
+    : (`0x${privateKey}` as `0x${string}`);
+
+  const account = privateKeyToAccount(formattedPrivateKey);
 
   switch (chainId) {
     case SupportedChainId.BASE_SEPOLIA:

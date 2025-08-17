@@ -96,6 +96,18 @@ export const PERMIT2_ABI = [
   },
   {
     inputs: [
+      { name: "from", type: "address" },
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint160" },
+      { name: "token", type: "address" },
+    ],
+    name: "transferFrom",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
       { name: "owner", type: "address" },
       { name: "token", type: "address" },
       { name: "spender", type: "address" },

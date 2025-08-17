@@ -133,7 +133,12 @@ export class CCTPService {
       throw new Error(`No RPC URL configured for chain ID: ${chainId}`);
     }
 
-    const account = privateKeyToAccount(privateKey as `0x${string}`);
+    // Ensure private key has 0x prefix and is properly formatted
+    const formattedPrivateKey = privateKey.startsWith("0x")
+      ? (privateKey as `0x${string}`)
+      : (`0x${privateKey}` as `0x${string}`);
+
+    const account = privateKeyToAccount(formattedPrivateKey);
 
     return createWalletClient({
       chain,

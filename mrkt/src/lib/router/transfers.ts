@@ -4,6 +4,7 @@ import {
   getDestinationDomain,
   getTokenAddress,
   getTokenMessengerContractAddress,
+  PERMIT2_ADDRESS,
   RPC_URLS,
   SupportedChainId,
 } from "../../config/tokens";
@@ -11,7 +12,7 @@ import { CCTPService } from "../cctp/service";
 import { parseAmount } from "../cctp/utils";
 import * as db from "../db";
 import { CrossChainPayment } from "../permits/types";
-import { ERC20_ABI, MESSAGE_SENT_EVENT_SIGNATURE } from "./abis";
+import { ERC20_ABI, MESSAGE_SENT_EVENT_SIGNATURE, PERMIT2_ABI } from "./abis";
 import {
   createRouterPublicClient,
   createRouterWalletClient,
@@ -27,7 +28,7 @@ export interface TransferResult {
   crossChainPaymentId?: string;
 }
 
-// Execute permit-based transfer from user to admin wallet
+// Execute permit-based transfer from user to admin wallet using Permit2
 export async function executePermitTransfer(
   permit: db.UserPermit,
   amount: bigint,
@@ -44,16 +45,16 @@ export async function executePermitTransfer(
     throw new Error(`Token ${permit.token} not supported on chain ${chainId}`);
   }
 
-  // The permit was already signed by the user and gives the admin wallet (spender)
-  // permission to transfer tokens. We just need to execute transferFrom.
+  // Use Permit2's transferFrom function (the permit allowance was already set when the permit was submitted)
   const transferHash = await client.writeContract({
-    address: tokenAddress as `0x${string}`,
-    abi: ERC20_ABI,
+    address: PERMIT2_ADDRESS as `0x${string}`,
+    abi: PERMIT2_ABI,
     functionName: "transferFrom",
     args: [
-      permit.userAddress as `0x${string}`,
-      permit.spenderAddress as `0x${string}`, // This is the admin wallet
-      amount,
+      permit.userAddress as `0x${string}`, // from
+      permit.spenderAddress as `0x${string}`, // to (admin wallet)
+      amount, // amount (uint160)
+      tokenAddress as `0x${string}`, // token
     ],
   });
 
@@ -68,7 +69,7 @@ export async function executePermitTransfer(
   });
 
   if (transferReceipt.status !== "success") {
-    throw new Error("TransferFrom transaction failed");
+    throw new Error("Permit2 transfer transaction failed");
   }
 }
 
@@ -192,7 +193,13 @@ export async function executeSameChainTransfer(params: {
 
   // Get viem chain config
   const chain = getViemChain(params.sourceChainId);
-  const account = privateKeyToAccount(adminPrivateKey as `0x${string}`);
+
+  // Ensure private key has 0x prefix and is properly formatted
+  const formattedPrivateKey = adminPrivateKey.startsWith("0x")
+    ? (adminPrivateKey as `0x${string}`)
+    : (`0x${adminPrivateKey}` as `0x${string}`);
+
+  const account = privateKeyToAccount(formattedPrivateKey);
   const walletClient = createWalletClient({
     chain,
     transport: http(RPC_URLS[params.sourceChainId as keyof typeof RPC_URLS]),
@@ -209,21 +216,22 @@ export async function executeSameChainTransfer(params: {
     amount: amountInTokenUnits.toString(),
   });
 
-  // Execute transferFrom using the permit
+  // Execute transferFrom using Permit2 (the permit allowance was already set)
   let transactionHash;
   try {
     transactionHash = await walletClient.writeContract({
-      address: getAddress(tokenAddress),
-      abi: ERC20_ABI,
+      address: PERMIT2_ADDRESS as `0x${string}`,
+      abi: PERMIT2_ABI,
       functionName: "transferFrom",
       args: [
-        getAddress(params.fromAddress),
-        getAddress(params.toAddress),
-        amountInTokenUnits,
+        getAddress(params.fromAddress), // from
+        getAddress(params.toAddress), // to
+        amountInTokenUnits, // amount (uint160)
+        getAddress(tokenAddress), // token
       ],
     });
   } catch (error) {
-    console.error(`${logPrefix} TransferFrom transaction failed:`, {
+    console.error(`${logPrefix} Permit2 transfer transaction failed:`, {
       error: error instanceof Error ? error.message : "Unknown error",
       stack: error instanceof Error ? error.stack : undefined,
       tokenAddress,
@@ -233,7 +241,7 @@ export async function executeSameChainTransfer(params: {
       permitId: params.permit.id,
     });
     throw new Error(
-      `Failed to execute transferFrom: ${
+      `Failed to execute Permit2 transfer: ${
         error instanceof Error ? error.message : "Unknown error"
       }`
     );
