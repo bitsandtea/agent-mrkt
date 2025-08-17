@@ -1,0 +1,443 @@
+{
+  "users": [
+    {
+      "id": "user_001",
+      "wallet_address": "0x67a691d5f88CA86a37b46b4E0848F2884CdF3A6C",
+      "role": "publisher",
+      "email": "hi@blocksec.com",
+      "username": "BlockSec",
+      "api_key": "ak_live_1234567890abcdef",
+      "is_approved": true,
+      "min_balance_usd": 20,
+      "created_at": "2024-01-15T10:30:00Z",
+      "updated_at": "2024-01-15T10:30:00Z",
+      "wallet_info": {
+        "ens_name": "blocksec.eth",
+        "avatar": "https://avatar.example.com/blocksec"
+      },
+      "permit2_approved": true,
+      "preferred_networks": ["base"],
+      "preferred_tokens": ["USDC", "PYUSD"]
+    },
+    {
+      "id": "user_002",
+      "wallet_address": "0x67a691d5f88CA86a37b46b4E0848F2884CdF3A6C",
+      "role": "publisher",
+      "email": "dev@openzeppelin.com",
+      "username": "OpenZeppelin",
+      "api_key": "ak_live_2345678901bcdefg",
+      "is_approved": true,
+      "min_balance_usd": 20,
+      "created_at": "2024-01-10T08:15:00Z",
+      "updated_at": "2024-01-10T08:15:00Z",
+      "wallet_info": {
+        "ens_name": "openzeppelin.eth",
+        "avatar": "https://avatar.example.com/openzeppelin"
+      },
+      "permit2_approved": true,
+      "preferred_networks": ["ethereum", "arbitrum"],
+      "preferred_tokens": ["USDC"]
+    },
+    {
+      "id": "user_003",
+      "wallet_address": "0x67a691d5f88CA86a37b46b4E0848F2884CdF3A6C",
+      "role": "publisher",
+      "email": "team@consensys.net",
+      "username": "ConsenSys",
+      "api_key": "ak_live_3456789012cdefgh",
+      "is_approved": true,
+      "min_balance_usd": 20,
+      "created_at": "2024-01-12T14:20:00Z",
+      "updated_at": "2024-01-12T14:20:00Z",
+      "wallet_info": {
+        "ens_name": "consensys.eth",
+        "avatar": "https://avatar.example.com/consensys"
+      },
+      "permit2_approved": true,
+      "preferred_networks": ["ethereum", "base"],
+      "preferred_tokens": ["USDC", "PYUSD"]
+    },
+    {
+      "id": "user_004",
+      "wallet_address": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C",
+      "role": "consumer",
+      "email": "consumer@example.com",
+      "username": "CryptoDev",
+      "api_key": "ak_live_4567890123defghi",
+      "is_approved": true,
+      "min_balance_usd": 20,
+      "created_at": "2024-01-22T12:00:00Z",
+      "updated_at": "2024-01-22T12:00:00Z",
+      "wallet_info": {
+        "ens_name": "cryptodev.eth",
+        "avatar": "https://avatar.example.com/cryptodev"
+      },
+      "permit2_approved": false,
+      "preferred_networks": ["base", "ethereum"],
+      "preferred_tokens": ["USDC"]
+    }
+  ],
+  "agents": [
+    {
+      "id": "agent_001",
+      "publisher_id": "user_001",
+      "name": "Smart Contract Security Auditor",
+      "description": "Advanced AI agent that performs comprehensive security audits of smart contracts. Analyzes Solidity code for vulnerabilities, gas optimization opportunities, and best practice compliance. Generates detailed audit reports with severity classifications and remediation recommendations.",
+      "api_endpoint": "https://api.cryptoauditor.com/audit",
+      "free_trial_tries": 3,
+      "price_per_call_usd": 2.5,
+      "payment_preferences": {
+        "supported_tokens": ["USDC", "PYUSD"],
+        "supported_networks": {
+          "USDC": ["arbitrum", "base", "ethereum"],
+          "PYUSD": ["testnet"]
+        }
+      },
+      "api_documentation": {
+        "methods": [
+          {
+            "name": "audit_contract",
+            "description": "Perform comprehensive security audit of a smart contract from GitHub repository",
+            "parameters": {
+              "github_url": "string - GitHub repository URL containing the smart contract",
+              "entry_contract": "string - Entry contract filename (e.g., 'Main.sol')"
+            },
+            "examples": [
+              {
+                "method": "audit_contract",
+                "request": {
+                  "github_url": "https://github.com/example/smart-contract-repo",
+                  "entry_contract": "Main.sol"
+                },
+                "response": {
+                  "audit_id": "audit_12345",
+                  "contract_name": "Main.sol",
+                  "overall_score": 85,
+                  "vulnerabilities": [
+                    {
+                      "severity": "medium",
+                      "description": "Potential reentrancy vulnerability in withdraw function",
+                      "file": "Main.sol",
+                      "line": 45
+                    }
+                  ],
+                  "gas_optimizations": [
+                    {
+                      "severity": "low",
+                      "description": "Consider using immutable for constant values",
+                      "file": "Main.sol",
+                      "line": 12
+                    }
+                  ],
+                  "report_url": "https://github.com/blocksecteam/audit-reports/blob/main/solidity/blocksec_staketogether_v1.1-signed.pdf"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "status": "active",
+      "created_at": "2024-01-15T11:00:00Z",
+      "updated_at": "2024-01-20T14:30:00Z",
+      "total_calls": 247,
+      "total_revenue_usd": 617.5,
+      "rating": 4.8,
+      "review_count": 23
+    },
+    {
+      "id": "agent_002",
+      "publisher_id": "user_002",
+      "name": "Gas Optimization Analyzer",
+      "description": "Advanced AI agent that analyzes smart contracts for gas optimization opportunities. Identifies inefficient patterns, suggests improvements, and estimates gas savings. Perfect for reducing deployment and execution costs.",
+      "api_endpoint": "https://api.openzeppelin.com/gas-optimizer",
+      "free_trial_tries": 5,
+      "price_per_call_usd": 1.25,
+      "payment_preferences": {
+        "supported_tokens": ["USDC"],
+        "supported_networks": {
+          "USDC": ["ethereum", "arbitrum"]
+        }
+      },
+      "api_documentation": {
+        "methods": [
+          {
+            "name": "optimize_gas",
+            "description": "Analyze smart contract for gas optimization opportunities",
+            "parameters": {
+              "github_url": "string - GitHub repository URL containing the smart contract",
+              "entry_contract": "string - Entry contract filename (e.g., 'Token.sol')"
+            },
+            "examples": [
+              {
+                "method": "optimize_gas",
+                "request": {
+                  "github_url": "https://github.com/example/token-contract",
+                  "entry_contract": "Token.sol"
+                },
+                "response": {
+                  "optimization_id": "opt_67890",
+                  "contract_name": "Token.sol",
+                  "current_gas_estimate": 2500000,
+                  "optimized_gas_estimate": 2100000,
+                  "savings_percentage": 16,
+                  "optimizations": [
+                    {
+                      "type": "storage_packing",
+                      "description": "Pack struct variables to reduce storage slots",
+                      "gas_saved": 200000,
+                      "file": "Token.sol",
+                      "line": 25
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "status": "active",
+      "created_at": "2024-01-10T09:00:00Z",
+      "updated_at": "2024-01-18T11:30:00Z",
+      "total_calls": 156,
+      "total_revenue_usd": 195.0,
+      "rating": 4.6,
+      "review_count": 18
+    },
+    {
+      "id": "agent_003",
+      "publisher_id": "user_003",
+      "name": "DeFi Protocol Analyzer",
+      "description": "Specialized AI agent for analyzing DeFi protocols and smart contracts. Focuses on liquidity risks, MEV vulnerabilities, and protocol-specific security patterns. Essential for DeFi developers and auditors.",
+      "api_endpoint": "https://api.consensys.com/defi-analyzer",
+      "free_trial_tries": 2,
+      "price_per_call_usd": 3.75,
+      "payment_preferences": {
+        "supported_tokens": ["USDC", "PYUSD"],
+        "supported_networks": {
+          "USDC": ["ethereum", "base"],
+          "PYUSD": ["testnet"]
+        }
+      },
+      "api_documentation": {
+        "methods": [
+          {
+            "name": "analyze_defi",
+            "description": "Comprehensive analysis of DeFi protocol smart contracts",
+            "parameters": {
+              "github_url": "string - GitHub repository URL containing the DeFi protocol",
+              "entry_contract": "string - Main protocol contract filename (e.g., 'Protocol.sol')"
+            },
+            "examples": [
+              {
+                "method": "analyze_defi",
+                "request": {
+                  "github_url": "https://github.com/example/defi-protocol",
+                  "entry_contract": "Protocol.sol"
+                },
+                "response": {
+                  "analysis_id": "defi_54321",
+                  "protocol_type": "AMM",
+                  "risk_score": 7.2,
+                  "liquidity_risks": [
+                    {
+                      "severity": "medium",
+                      "description": "Potential for sandwich attacks in swap function",
+                      "mitigation": "Implement slippage protection"
+                    }
+                  ],
+                  "mev_vulnerabilities": [],
+                  "protocol_specific_issues": []
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "status": "active",
+      "created_at": "2024-01-12T15:00:00Z",
+      "updated_at": "2024-01-19T09:45:00Z",
+      "total_calls": 89,
+      "total_revenue_usd": 333.75,
+      "rating": 4.9,
+      "review_count": 12
+    },
+    {
+      "id": "agent_004",
+      "publisher_id": "user_001",
+      "name": "Premium Contract Optimizer",
+      "description": "Enterprise-grade smart contract optimization service with advanced analysis capabilities. Provides detailed optimization reports, gas usage predictions, and deployment recommendations. No free trials - subscription required.",
+      "api_endpoint": "https://api.blocksec.com/premium-optimizer",
+      "free_trial_tries": 0,
+      "price_per_call_usd": 5.0,
+      "payment_preferences": {
+        "supported_tokens": ["USDC"],
+        "supported_networks": {
+          "USDC": ["base", "ethereum"]
+        }
+      },
+      "api_documentation": {
+        "methods": [
+          {
+            "name": "optimize_premium",
+            "description": "Premium optimization analysis with enterprise features",
+            "parameters": {
+              "github_url": "string - GitHub repository URL containing the smart contract",
+              "entry_contract": "string - Entry contract filename (e.g., 'Contract.sol')"
+            },
+            "examples": [
+              {
+                "method": "optimize_premium",
+                "request": {
+                  "github_url": "https://github.com/example/enterprise-contract",
+                  "entry_contract": "Enterprise.sol"
+                },
+                "response": {
+                  "optimization_id": "prem_98765",
+                  "contract_name": "Enterprise.sol",
+                  "optimization_score": 95,
+                  "gas_savings": 450000,
+                  "deployment_cost_reduction": "35%",
+                  "premium_insights": [
+                    {
+                      "category": "advanced_patterns",
+                      "description": "Implement proxy pattern for upgradeability",
+                      "impact": "high"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "status": "active",
+      "created_at": "2024-01-20T16:00:00Z",
+      "updated_at": "2024-01-22T10:15:00Z",
+      "total_calls": 45,
+      "total_revenue_usd": 225.0,
+      "rating": 5.0,
+      "review_count": 8
+    }
+  ],
+  "subscriptions": [
+    {
+      "id": "sub_001",
+      "user_id": "user_002",
+      "agent_id": "agent_001",
+      "status": "active",
+      "free_trials_remaining": 2,
+      "free_trials_used": 1,
+      "total_paid_calls": 15,
+      "total_spent_usd": 37.5,
+      "subscription_date": "2024-01-18T09:15:00Z",
+      "last_used": "2024-01-22T16:45:00Z",
+      "auto_renew": true,
+      "payment_token": "USDC",
+      "payment_network": "arbitrum"
+    }
+  ],
+  "payments": [
+    {
+      "id": "pay_001",
+      "user_id": "user_002",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_001",
+      "amount_usd": 2.5,
+      "amount_tokens": 2.5,
+      "token": "USDC",
+      "network": "arbitrum",
+      "transaction_hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "status": "completed",
+      "payment_type": "api_call",
+      "api_call_id": "call_001",
+      "timestamp": "2024-01-22T16:45:00Z",
+      "block_number": 12345678,
+      "gas_used": 50000,
+      "gas_price": "20000000000"
+    }
+  ],
+  "api_calls": [
+    {
+      "id": "call_001",
+      "user_id": "user_002",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_001",
+      "endpoint": "https://api.cryptoauditor.com/audit",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/example/token-contract",
+        "entry_contract": "Token.sol"
+      },
+      "request_timestamp": "2024-01-22T16:45:00Z",
+      "response_timestamp": "2024-01-22T16:45:08Z",
+      "http_status": 200,
+      "response_time_ms": 8000,
+      "is_free_trial": false,
+      "charged_amount_usd": 2.5,
+      "payment_id": "pay_001",
+      "error_message": null,
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+      "ip_address": "192.168.1.100"
+    }
+  ],
+  "networks": [
+    {
+      "id": "arbitrum",
+      "name": "arbitrum",
+      "chain_id": 42161,
+      "rpc_url": "https://arb1.arbitrum.io/rpc",
+      "explorer_url": "https://arbiscan.io",
+      "is_testnet": false,
+      "supported_tokens": ["USDC"],
+      "status": "active"
+    },
+    {
+      "id": "base",
+      "name": "base",
+      "chain_id": 8453,
+      "rpc_url": "https://mainnet.base.org",
+      "explorer_url": "https://basescan.org",
+      "is_testnet": false,
+      "supported_tokens": ["USDC"],
+      "status": "active"
+    },
+    {
+      "id": "ethereum",
+      "name": "ethereum",
+      "chain_id": 1,
+      "rpc_url": "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
+      "explorer_url": "https://etherscan.io",
+      "is_testnet": false,
+      "supported_tokens": ["USDC"],
+      "status": "active"
+    }
+  ],
+  "tokens": [
+    {
+      "id": "usdc",
+      "symbol": "USDC",
+      "name": "USD Coin",
+      "decimals": 6,
+      "contract_addresses": {
+        "arbitrum": "0xA0b86a33E6441e6e80D0f73D9C3C0e0B8C8C8C8C",
+        "base": "0xB0b86a33E6441e6e80D0f73D9C3C0e0B8C8C8C8C",
+        "ethereum": "0xA0b86a33E6441e6e80D0f73D9C3C0e0B8C8C8C8C"
+      },
+      "usd_price": 1.0,
+      "is_stablecoin": true,
+      "status": "active"
+    },
+    {
+      "id": "pyusd",
+      "symbol": "PYUSD",
+      "name": "PayPal USD",
+      "decimals": 6,
+      "contract_addresses": {
+        "testnet": "0xC0b86a33E6441e6e80D0f73D9C3C0e0B8C8C8C8C"
+      },
+      "usd_price": 1.0,
+      "is_stablecoin": true,
+      "status": "active"
+    }
+  ]
+}
