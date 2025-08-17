@@ -1,6 +1,6 @@
 "use client";
 
-import { usePermitStatus } from "@/hooks/usePermits";
+import { usePermitStatus } from "@/lib/permits/hooks";
 import { useEffect, useMemo, useState } from "react";
 
 export function PermitStatus() {

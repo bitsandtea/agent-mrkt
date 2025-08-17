@@ -2,6 +2,21 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Environment Variables
+
+Create a `.env.local` file in the root directory with the following variables:
+
+```bash
+# Required for CCTP cross-chain transfers and permit-based payments
+ADMIN_PKEY=0x... # Private key for the admin wallet that executes transactions
+ADMIN_ADDRESS=0x... # Admin wallet address (must match the private key)
+
+# Optional - RPC URLs (defaults provided)
+NEXT_PUBLIC_ATTESTATION_API_URL=https://iris-api-sandbox.circle.com
+```
+
+**Security Note**: Never commit private keys to version control. Use environment variables or secure key management systems in production.
+
 First, run the development server:
 
 ```bash

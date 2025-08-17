@@ -5,9 +5,11 @@ import path from "path";
 export interface Agent {
   id: string;
   publisher_id: string;
+  publisher_wallet_address?: string;
   name: string;
   description: string;
   api_endpoint: string;
+  publisher_api_key?: string;
   free_trial_tries: number;
   price_per_call_usd: number;
   payment_preferences: {
@@ -88,6 +90,8 @@ export interface Payment {
   block_number: number;
   gas_used: number;
   gas_price: string;
+  message_hash?: string;
+  cross_chain_payment_id?: string;
 }
 
 export interface ApiCall {
@@ -132,6 +136,24 @@ export interface UserPermit {
   costPerCall: number;
 }
 
+export interface CrossChainPayment {
+  id: string;
+  agentId: string;
+  userId: string;
+  sourceChainId: number;
+  targetChainId: number;
+  amount: string;
+  token: string;
+  messageHash: string;
+  attestationStatus: "pending" | "complete" | "failed";
+  sourceTransactionHash?: string;
+  targetTransactionHash?: string;
+  permitId?: string;
+  createdAt: number;
+  completedAt?: number;
+  errorMessage?: string;
+}
+
 interface DatabaseSchema {
   users: User[];
   agents: Agent[];
@@ -139,6 +161,7 @@ interface DatabaseSchema {
   payments: Payment[];
   api_calls: ApiCall[];
   permits: UserPermit[];
+  crossChainPayments: CrossChainPayment[];
   networks: Array<Record<string, unknown>>;
   tokens: Array<Record<string, unknown>>;
 }
@@ -152,6 +175,7 @@ const db = new Low(adapter, {
   payments: [],
   api_calls: [],
   permits: [],
+  crossChainPayments: [],
   networks: [],
   tokens: [],
 });
@@ -304,7 +328,106 @@ export async function updatePermitStatus(
   return permit;
 }
 
+export async function updatePermitUsage(
+  id: string,
+  callsUsed: number
+): Promise<UserPermit | null> {
+  await db.read();
+  const permit = db.data.permits.find((p) => p.id === id);
+
+  if (!permit) {
+    return null;
+  }
+
+  permit.callsUsed = callsUsed;
+
+  // Auto-expire permit if all calls are used
+  if (permit.callsUsed >= permit.maxCalls) {
+    permit.status = "expired";
+  }
+
+  await db.write();
+  return permit;
+}
+
 export async function getAllPermits(): Promise<UserPermit[]> {
   await db.read();
   return db.data.permits;
+}
+
+// Cross-chain payment database functions
+export async function createCrossChainPayment(
+  paymentData: CrossChainPayment
+): Promise<CrossChainPayment> {
+  await db.read();
+  db.data.crossChainPayments.push(paymentData);
+  await db.write();
+  return paymentData;
+}
+
+export async function getCrossChainPaymentById(
+  id: string
+): Promise<CrossChainPayment | null> {
+  await db.read();
+  const payment = db.data.crossChainPayments.find((p) => p.id === id);
+  return payment || null;
+}
+
+export async function getCrossChainPaymentsByUser(
+  userId: string
+): Promise<CrossChainPayment[]> {
+  await db.read();
+  return db.data.crossChainPayments.filter((p) => p.userId === userId);
+}
+
+export async function getCrossChainPaymentsByAgent(
+  agentId: string
+): Promise<CrossChainPayment[]> {
+  await db.read();
+  return db.data.crossChainPayments.filter((p) => p.agentId === agentId);
+}
+
+export async function updateCrossChainPaymentStatus(
+  id: string,
+  attestationStatus: "pending" | "complete" | "failed",
+  targetTransactionHash?: string,
+  errorMessage?: string
+): Promise<CrossChainPayment | null> {
+  await db.read();
+  const payment = db.data.crossChainPayments.find((p) => p.id === id);
+
+  if (!payment) {
+    return null;
+  }
+
+  payment.attestationStatus = attestationStatus;
+
+  if (targetTransactionHash) {
+    payment.targetTransactionHash = targetTransactionHash;
+  }
+
+  if (errorMessage) {
+    payment.errorMessage = errorMessage;
+  }
+
+  if (attestationStatus === "complete" || attestationStatus === "failed") {
+    payment.completedAt = Date.now();
+  }
+
+  await db.write();
+  return payment;
+}
+
+export async function getPendingCrossChainPayments(): Promise<
+  CrossChainPayment[]
+> {
+  await db.read();
+  return db.data.crossChainPayments.filter(
+    (p) => p.attestationStatus === "pending"
+  );
+}
+
+export async function getAllCrossChainPayments(): Promise<CrossChainPayment[]> {
+  await db.read();
+  return db.data.crossChainPayments;
 }

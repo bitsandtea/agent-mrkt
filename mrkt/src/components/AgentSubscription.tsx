@@ -1,9 +1,10 @@
 "use client";
 
 import { DEFAULT_DECIMALS, getChainName } from "@/config/tokens";
+import { useUserPermits } from "@/lib/permits/hooks";
 import { UserPermit } from "@/lib/permits/types";
 import Image from "next/image";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 interface AgentSubscriptionProps {
   permits: UserPermit[];
@@ -12,6 +13,7 @@ interface AgentSubscriptionProps {
   usedCalls: number;
   remainingCalls: number;
   onEditSubscription: () => void;
+  onPermitRevoked?: (permitId: string) => void;
 }
 
 export function AgentSubscription({
@@ -21,7 +23,36 @@ export function AgentSubscription({
   usedCalls,
   remainingCalls,
   onEditSubscription,
+  onPermitRevoked,
 }: AgentSubscriptionProps) {
+  const [revokingPermits, setRevokingPermits] = useState<Set<string>>(
+    new Set()
+  );
+  const { revokePermitWithOnChain } = useUserPermits();
+
+  const handleRevokePermit = async (permit: UserPermit) => {
+    if (revokingPermits.has(permit.id)) return;
+
+    setRevokingPermits((prev) => new Set(prev).add(permit.id));
+
+    try {
+      // Gasless revocation: User signs permit with amount=0, admin executes
+      await revokePermitWithOnChain(permit);
+
+      // Notify parent component
+      onPermitRevoked?.(permit.id);
+    } catch (error) {
+      console.error("Failed to revoke permit:", error);
+      // You might want to show a toast notification here
+    } finally {
+      setRevokingPermits((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(permit.id);
+        return newSet;
+      });
+    }
+  };
+
   // Filter to keep only the highest value permit per token/chain combination
   const filteredPermits = useMemo(() => {
     return permits.reduce((acc, permit) => {
@@ -129,13 +160,39 @@ export function AgentSubscription({
                   </div>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-cyan-400 font-semibold text-sm">
-                  ${formatTokenAmount(permit.amount)}
+              <div className="flex items-center space-x-3">
+                <div className="text-right">
+                  <div className="text-cyan-400 font-semibold text-sm">
+                    ${formatTokenAmount(permit.amount)}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {permit.maxCalls - permit.callsUsed} calls left
+                  </div>
                 </div>
-                <div className="text-xs text-gray-400">
-                  {permit.maxCalls - permit.callsUsed} calls left
-                </div>
+                <button
+                  onClick={() => handleRevokePermit(permit)}
+                  disabled={revokingPermits.has(permit.id)}
+                  className="p-1 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Revoke permit (gasless)"
+                >
+                  {revokingPermits.has(permit.id) ? (
+                    <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <svg
+                      className="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  )}
+                </button>
               </div>
             </div>
 

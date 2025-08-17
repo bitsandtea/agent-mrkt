@@ -2,11 +2,10 @@
 
 import { AgentSubscription } from "@/components/AgentSubscription";
 import { PermitModal } from "@/components/permits";
-import { PermitStatus } from "@/components/PermitStatus";
 import { getChainName, SUPPORTED_TOKENS } from "@/config/tokens";
-import { useAgentSubscription } from "@/hooks/usePermits";
 import { useUser } from "@/hooks/useUser";
 import { savePermit, UserPermit } from "@/lib/permits";
+import { useAgentSubscription } from "@/lib/permits/hooks";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -99,6 +98,11 @@ export default function ProjectPage() {
 
   const handleEditSubscription = () => {
     setShowPermitSetup(true);
+  };
+
+  const handlePermitRevoked = (permitId: string) => {
+    // Refresh subscription data after permit revocation
+    refreshSubscription();
   };
 
   const getCodeExample = (language: string, agent: Agent) => {
@@ -644,15 +648,9 @@ if __name__ == '__main__':
               isOpen={showPermitSetup}
               onClose={() => setShowPermitSetup(false)}
               costPerCall={agent.price_per_call_usd}
+              agentId={agent.id}
               onPermitCreated={handlePermitCreated}
             />
-
-            {/* Permit Status */}
-            {address && (
-              <div className="bg-black/40 backdrop-blur-sm rounded-xl border border-purple-500/20 p-6">
-                <PermitStatus />
-              </div>
-            )}
           </div>
         </div>
       </div>

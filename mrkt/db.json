@@ -16,8 +16,13 @@
         "avatar": "https://avatar.example.com/blocksec"
       },
       "permit2_approved": true,
-      "preferred_networks": ["base"],
-      "preferred_tokens": ["USDC", "PYUSD"]
+      "preferred_networks": [
+        "base"
+      ],
+      "preferred_tokens": [
+        "USDC",
+        "PYUSD"
+      ]
     },
     {
       "id": "user_002",
@@ -35,8 +40,13 @@
         "avatar": "https://avatar.example.com/openzeppelin"
       },
       "permit2_approved": true,
-      "preferred_networks": ["ethereum", "arbitrum"],
-      "preferred_tokens": ["USDC"]
+      "preferred_networks": [
+        "ethereum",
+        "arbitrum"
+      ],
+      "preferred_tokens": [
+        "USDC"
+      ]
     },
     {
       "id": "user_003",
@@ -54,8 +64,14 @@
         "avatar": "https://avatar.example.com/consensys"
       },
       "permit2_approved": true,
-      "preferred_networks": ["ethereum", "base"],
-      "preferred_tokens": ["USDC", "PYUSD"]
+      "preferred_networks": [
+        "ethereum",
+        "base"
+      ],
+      "preferred_tokens": [
+        "USDC",
+        "PYUSD"
+      ]
     },
     {
       "id": "user_004",
@@ -73,8 +89,13 @@
         "avatar": "https://avatar.example.com/cryptodev"
       },
       "permit2_approved": false,
-      "preferred_networks": ["base", "ethereum"],
-      "preferred_tokens": ["USDC"]
+      "preferred_networks": [
+        "base",
+        "ethereum"
+      ],
+      "preferred_tokens": [
+        "USDC"
+      ]
     }
   ],
   "agents": [
@@ -83,7 +104,7 @@
       "publisher_id": "user_001",
       "name": "Smart Contract Security Auditor",
       "description": "Advanced AI agent that performs comprehensive security audits of smart contracts. Analyzes Solidity code for vulnerabilities, gas optimization opportunities, and best practice compliance. Generates detailed audit reports with severity classifications and remediation recommendations.",
-      "api_endpoint": "https://api.cryptoauditor.com/audit",
+      "api_endpoint": "http://localhost:3000/api/mock-audit",
       "free_trial_tries": 3,
       "price_per_call_usd": 0.01,
       "payment_preferences": {
@@ -324,6 +345,36 @@
       "auto_renew": true,
       "payment_token": "USDC",
       "payment_network": "arbitrum"
+    },
+    {
+      "id": "sub_1755396126760_vumtp8s52",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "status": "active",
+      "free_trials_remaining": 0,
+      "free_trials_used": 3,
+      "total_paid_calls": 0,
+      "total_spent_usd": 0,
+      "subscription_date": "2025-08-17T02:02:06.760Z",
+      "last_used": "2025-08-17T03:17:51.588Z",
+      "auto_renew": true,
+      "payment_token": "USDC",
+      "payment_network": "base"
+    },
+    {
+      "id": "sub_1755396406467_0c8s5bxy0",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "status": "active",
+      "free_trials_remaining": 3,
+      "free_trials_used": 0,
+      "total_paid_calls": 0,
+      "total_spent_usd": 0,
+      "subscription_date": "2025-08-17T02:06:46.467Z",
+      "last_used": "2025-08-17T02:06:46.467Z",
+      "auto_renew": true,
+      "payment_token": "USDC",
+      "payment_network": "base"
     }
   ],
   "payments": [
@@ -352,7 +403,7 @@
       "user_id": "user_002",
       "agent_id": "agent_001",
       "subscription_id": "sub_001",
-      "endpoint": "https://api.cryptoauditor.com/audit",
+      "endpoint": "http://localhost:3000/api/mock-audit",
       "method": "POST",
       "parameters": {
         "github_url": "https://github.com/example/token-contract",
@@ -368,6 +419,66 @@
       "error_message": null,
       "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
       "ip_address": "192.168.1.100"
+    },
+    {
+      "id": "call_1755397180869_dwlb6pta9",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755396126760_vumtp8s52",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T02:19:40.869Z",
+      "response_timestamp": "2025-08-17T02:19:40.869Z",
+      "http_status": 200,
+      "response_time_ms": 5667,
+      "is_free_trial": true,
+      "charged_amount_usd": 0,
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
+    },
+    {
+      "id": "call_1755400315843_6po1ae5qb",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755396126760_vumtp8s52",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T03:11:55.843Z",
+      "response_timestamp": "2025-08-17T03:11:55.843Z",
+      "http_status": 200,
+      "response_time_ms": 5941,
+      "is_free_trial": true,
+      "charged_amount_usd": 0,
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
+    },
+    {
+      "id": "call_1755400671584_xqykmqdmt",
+      "user_id": "user_004",
+      "agent_id": "agent_001",
+      "subscription_id": "sub_1755396126760_vumtp8s52",
+      "endpoint": "router/agent_001",
+      "method": "POST",
+      "parameters": {
+        "github_url": "https://github.com/your-username/your-repo",
+        "entry_contract": "YourContract.sol"
+      },
+      "request_timestamp": "2025-08-17T03:17:51.584Z",
+      "response_timestamp": "2025-08-17T03:17:51.584Z",
+      "http_status": 200,
+      "response_time_ms": 6362,
+      "is_free_trial": true,
+      "charged_amount_usd": 0,
+      "user_agent": "API Router v1.0",
+      "ip_address": "127.0.0.1"
     }
   ],
   "networks": [
@@ -378,7 +489,9 @@
       "rpc_url": "https://arb1.arbitrum.io/rpc",
       "explorer_url": "https://arbiscan.io",
       "is_testnet": false,
-      "supported_tokens": ["USDC"],
+      "supported_tokens": [
+        "USDC"
+      ],
       "status": "active"
     },
     {
@@ -388,7 +501,9 @@
       "rpc_url": "https://mainnet.base.org",
       "explorer_url": "https://basescan.org",
       "is_testnet": false,
-      "supported_tokens": ["USDC"],
+      "supported_tokens": [
+        "USDC"
+      ],
       "status": "active"
     },
     {
@@ -398,7 +513,9 @@
       "rpc_url": "https://mainnet.infura.io/v3/YOUR_PROJECT_ID",
       "explorer_url": "https://etherscan.io",
       "is_testnet": false,
-      "supported_tokens": ["USDC"],
+      "supported_tokens": [
+        "USDC"
+      ],
       "status": "active"
     }
   ],
@@ -417,7 +534,7 @@
         "s": "0x68a8ceaafa34cdc26c7ae9e29d6edaa2efd1ad5934e5461080d2fa492b6e3455",
         "v": 27
       },
-      "status": "active",
+      "status": "revoked",
       "createdAt": 1755392093470,
       "expiresAt": 1757984093470,
       "maxCalls": 100,
@@ -438,9 +555,95 @@
         "s": "0x68d7333b45cd6984c68a8756558168abdc9d048fce97fb4d49e4b3d9cac05222",
         "v": 28
       },
-      "status": "active",
+      "status": "revoked",
       "createdAt": 1755392494243,
       "expiresAt": 1757984494243,
+      "maxCalls": 100,
+      "callsUsed": 0,
+      "costPerCall": 0.01
+    },
+    {
+      "id": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C-USDC-84532-1755396126638",
+      "userAddress": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C",
+      "token": "USDC",
+      "chainId": 84532,
+      "spenderAddress": "0x2aC4b8c91550c51a1e13910f0d325dc51bBE942C",
+      "amount": "1000000",
+      "nonce": "0",
+      "deadline": "1757988122",
+      "signature": {
+        "r": "0x327ecb50f8275d6ee053887a8f02415b49c0458a66f5170e651f4daf2ee44628",
+        "s": "0x4d2655ed3cb280920f4bac7298f43cb7f850cee5bccdbc98ec81fd158cb4af56",
+        "v": 27
+      },
+      "status": "revoked",
+      "createdAt": 1755396126638,
+      "expiresAt": 1757988122000,
+      "maxCalls": 100,
+      "callsUsed": 0,
+      "costPerCall": 0.01
+    },
+    {
+      "id": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C-USDC-84532-1755396126707",
+      "userAddress": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C",
+      "agentId": "agent_001",
+      "token": "USDC",
+      "chainId": 84532,
+      "spenderAddress": "0x2aC4b8c91550c51a1e13910f0d325dc51bBE942C",
+      "amount": "1000000",
+      "nonce": "0",
+      "deadline": "1757988126",
+      "signature": {
+        "r": "0x327ecb50f8275d6ee053887a8f02415b49c0458a66f5170e651f4daf2ee44628",
+        "s": "0x4d2655ed3cb280920f4bac7298f43cb7f850cee5bccdbc98ec81fd158cb4af56",
+        "v": 27
+      },
+      "status": "revoked",
+      "createdAt": 1755396126707,
+      "expiresAt": 1757988126707,
+      "maxCalls": 100,
+      "callsUsed": 0,
+      "costPerCall": 0.01
+    },
+    {
+      "id": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C-USDC-84532-1755396406372",
+      "userAddress": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C",
+      "token": "USDC",
+      "chainId": 84532,
+      "spenderAddress": "0x2aC4b8c91550c51a1e13910f0d325dc51bBE942C",
+      "amount": "1000000",
+      "nonce": "0",
+      "deadline": "1757988405",
+      "signature": {
+        "r": "0xb4961917c18c2d0b9e2e4cd9f3c173379c9ae5326d793148da632948ee3f819f",
+        "s": "0x7b6e8fb44e5ffc48a1efbd3ff1dde480d3771a48aae5cd90bc45ae5e0354b2aa",
+        "v": 28
+      },
+      "status": "active",
+      "createdAt": 1755396406372,
+      "expiresAt": 1757988405000,
+      "maxCalls": 100,
+      "callsUsed": 0,
+      "costPerCall": 0.01
+    },
+    {
+      "id": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C-USDC-84532-1755396406414",
+      "userAddress": "0xf673b4DEe6880427b48832879Ed7b95BdCd8963C",
+      "agentId": "agent_001",
+      "token": "USDC",
+      "chainId": 84532,
+      "spenderAddress": "0x2aC4b8c91550c51a1e13910f0d325dc51bBE942C",
+      "amount": "1000000",
+      "nonce": "0",
+      "deadline": "1757988406",
+      "signature": {
+        "r": "0xb4961917c18c2d0b9e2e4cd9f3c173379c9ae5326d793148da632948ee3f819f",
+        "s": "0x7b6e8fb44e5ffc48a1efbd3ff1dde480d3771a48aae5cd90bc45ae5e0354b2aa",
+        "v": 28
+      },
+      "status": "active",
+      "createdAt": 1755396406414,
+      "expiresAt": 1757988406414,
       "maxCalls": 100,
       "callsUsed": 0,
       "costPerCall": 0.01

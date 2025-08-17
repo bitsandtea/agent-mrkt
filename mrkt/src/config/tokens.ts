@@ -103,7 +103,9 @@ const ETH_SEPOLIA: AddEthereumChainParameter = {
     symbol: "ETH",
     decimals: 18,
   },
-  rpcUrls: ["https://sepolia.infura.io/v3/"],
+  rpcUrls: [
+    `https://sepolia.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_KEY}`,
+  ],
 };
 
 /* const AVAX_FUJI: AddEthereumChainParameter = {
@@ -167,26 +169,78 @@ export const CHAIN_IDS_TO_USDC_ADDRESSES = {
 };
 
 /**
- * Map of supported chains to Token Messenger contract addresses
+ * Map of supported chains to Token Messenger contract addresses (CCTP v2)
  */
 export const CHAIN_IDS_TO_TOKEN_MESSENGER_ADDRESSES = {
-  [SupportedChainId.ETH_SEPOLIA]: "0x9f3b8679c73c2fef8b59b4f3444d4e156fb70aa5",
-  // [SupportedChainId.AVAX_FUJI]: "0xeb08f243e5d3fcff26a9e38ae5520a669f4019d0",
-  // [SupportedChainId.ARB_SEPOLIA]: "0x9f3b8679c73c2fef8b59b4f3444d4e156fb70aa5",
-  [SupportedChainId.BASE_SEPOLIA]: "0x9f3b8679c73c2fef8b59b4f3444d4e156fb70aa5",
+  [SupportedChainId.ETH_SEPOLIA]: "0x8fe6b999dc680ccfdd5bf7eb0974218be2542daa",
+  // [SupportedChainId.AVAX_FUJI]: "0x8fe6b999dc680ccfdd5bf7eb0974218be2542daa",
+  // [SupportedChainId.ARB_SEPOLIA]: "0x8fe6b999dc680ccfdd5bf7eb0974218be2542daa",
+  [SupportedChainId.BASE_SEPOLIA]: "0x8fe6b999dc680ccfdd5bf7eb0974218be2542daa",
 };
 
 /**
- * Map of supported chains to Message Transmitter contract addresses
+ * Map of supported chains to Message Transmitter contract addresses (CCTP v2)
  */
 export const CHAIN_IDS_TO_MESSAGE_TRANSMITTER_ADDRESSES = {
-  [SupportedChainId.ETH_SEPOLIA]: "0x7865fafc2db2093669d92c0f33aeef291086befd",
-  // [SupportedChainId.AVAX_FUJI]: "0xa9fb1b3009dcb79e2fe346c16a604b8fa8ae0a79",
-  // [SupportedChainId.ARB_SEPOLIA]: "0xacf1ceef35caac005e15888ddb8a3515c41b4872",
-  [SupportedChainId.BASE_SEPOLIA]: "0x7865fafc2db2093669d92c0f33aeef291086befd",
+  [SupportedChainId.ETH_SEPOLIA]: "0xe737e5cebeeba77efe34d4aa090756590b1ce275",
+  // [SupportedChainId.AVAX_FUJI]: "0xe737e5cebeeba77efe34d4aa090756590b1ce275",
+  // [SupportedChainId.ARB_SEPOLIA]: "0xe737e5cebeeba77efe34d4aa090756590b1ce275",
+  [SupportedChainId.BASE_SEPOLIA]: "0xe737e5cebeeba77efe34d4aa090756590b1ce275",
 };
 
+/**
+ * CCTP Attestation API URL
+ */
+export const IRIS_ATTESTATION_API_URL =
+  process.env.NEXT_PUBLIC_ATTESTATION_API_URL ||
+  "https://iris-api-sandbox.circle.com";
+
+/**
+ * Utility functions for CCTP contract addresses
+ */
+export function getTokenMessengerContractAddress(
+  chainId: SupportedChainId | undefined
+): string {
+  if (!chainId || !(chainId in CHAIN_IDS_TO_TOKEN_MESSENGER_ADDRESSES)) {
+    throw new Error(`Unsupported chain ID: ${chainId}`);
+  }
+  return CHAIN_IDS_TO_TOKEN_MESSENGER_ADDRESSES[chainId];
+}
+
+export function getMessageTransmitterContractAddress(
+  chainId: SupportedChainId | undefined
+): string {
+  if (!chainId || !(chainId in CHAIN_IDS_TO_MESSAGE_TRANSMITTER_ADDRESSES)) {
+    throw new Error(`Unsupported chain ID: ${chainId}`);
+  }
+  return CHAIN_IDS_TO_MESSAGE_TRANSMITTER_ADDRESSES[chainId];
+}
+
+/**
+ * Maps chain ID to Circle destination domain
+ */
+export function getDestinationDomain(
+  chainId: number
+): DestinationDomain | null {
+  switch (chainId) {
+    case SupportedChainId.ETH_SEPOLIA:
+      return DestinationDomain.ETH;
+    case SupportedChainId.BASE_SEPOLIA:
+      return DestinationDomain.BASE;
+    default:
+      return null;
+  }
+}
+
 export const DEFAULT_DECIMALS = 6; // USDC
+
+/**
+ * RPC URLs for supported chains
+ */
+export const RPC_URLS = {
+  [SupportedChainId.ETH_SEPOLIA]: `https://sepolia.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_KEY}`,
+  [SupportedChainId.BASE_SEPOLIA]: "https://sepolia.base.org",
+} as const;
 
 export interface TokenConfig {
   symbol: string;
@@ -278,7 +332,7 @@ export function getSupportedNetworksForToken(token: string): number[] {
 
 export function getChainName(chainId: number): string {
   const chainEntry = Object.entries(CHAIN_TO_CHAIN_ID).find(
-    ([_, id]) => id === chainId
+    ([, id]) => id === chainId
   );
   if (!chainEntry) return "Unknown";
 
@@ -309,7 +363,7 @@ export function getChainParameters(
   chainId: number
 ): AddEthereumChainParameter | null {
   const chainIdHex = Object.entries(SupportedChainId).find(
-    ([_, id]) => id === chainId
+    ([, id]) => id === chainId
   )?.[0];
   if (!chainIdHex) return null;
 

@@ -7,6 +7,7 @@ import { useAccount } from "wagmi";
 
 interface PermitSliderProps {
   costPerCall: number;
+  agentId: string;
   onPermitCreated?: (permit: UserPermit) => void;
   selectedToken: string;
   selectedNetwork: number;
@@ -14,6 +15,7 @@ interface PermitSliderProps {
 
 export function PermitSlider({
   costPerCall,
+  agentId,
   onPermitCreated,
   selectedToken,
   selectedNetwork,
@@ -63,6 +65,7 @@ export function PermitSlider({
       const permit = {
         id: `${address}-${selectedToken}-${selectedNetwork}-${Date.now()}`,
         userAddress: address,
+        agentId: agentId,
         token: selectedToken,
         chainId: selectedNetwork,
         spenderAddress: process.env.NEXT_PUBLIC_ADMIN_ADDRESS!,

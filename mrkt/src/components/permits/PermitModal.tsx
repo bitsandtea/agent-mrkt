@@ -5,7 +5,7 @@ import {
 } from "@/config/tokens";
 import { UserPermit } from "@/lib/permits/types";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAccount, useBalance } from "wagmi";
 import { PermitSlider } from "./PermitSlider";
 
@@ -13,6 +13,7 @@ interface PermitModalProps {
   isOpen: boolean;
   onClose: () => void;
   costPerCall: number;
+  agentId: string;
   onPermitCreated: (permit: UserPermit) => void;
 }
 
@@ -22,6 +23,7 @@ export function PermitModal({
   isOpen,
   onClose,
   costPerCall,
+  agentId,
   onPermitCreated,
 }: PermitModalProps) {
   const [selectedToken, setSelectedToken] = useState<TokenType>("USDC");
@@ -30,10 +32,6 @@ export function PermitModal({
 
   // Get supported networks for selected token
   const supportedNetworks = getSupportedNetworksForToken(selectedToken);
-
-  useEffect(() => {
-    console.log("selectedNetwork", selectedNetwork);
-  }, [selectedNetwork]);
 
   // Get balance for selected token and network
   const tokenConfig = SUPPORTED_TOKENS[selectedToken];
@@ -186,6 +184,7 @@ export function PermitModal({
         {selectedNetwork && (
           <PermitSlider
             costPerCall={costPerCall}
+            agentId={agentId}
             onPermitCreated={onPermitCreated}
             selectedToken={selectedToken}
             selectedNetwork={selectedNetwork}

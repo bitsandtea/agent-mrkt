@@ -1,5 +1,5 @@
-import { UserPermit } from "@/hooks/usePermits";
 import { getPermitsFromApi, savePermitToApi } from "@/lib/permits/api";
+import { UserPermit } from "@/lib/permits/types";
 
 export async function savePermit(permit: UserPermit): Promise<UserPermit> {
   try {

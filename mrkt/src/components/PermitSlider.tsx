@@ -1,6 +1,6 @@
 "use client";
 
-import { useSubscriptionPermit } from "@/hooks/usePermits";
+import { useSubscriptionPermit } from "@/lib/permits/hooks";
 import { useCallback, useState } from "react";
 
 interface PermitSliderProps {

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { agentId: string } }
+  { params }: { params: Promise<{ agentId: string }> }
 ) {
   try {
     // Extract API key from Authorization header
@@ -22,7 +22,7 @@ export async function POST(
     }
 
     const apiKey = authHeader.substring(7); // Remove 'Bearer ' prefix
-    const agentId = params.agentId;
+    const { agentId } = await params;
 
     // Parse request body
     let routerRequest: RouterRequest;
@@ -91,7 +91,7 @@ export async function POST(
         },
         metadata: {
           request_id: `error_${Date.now()}`,
-          agent_id: params.agentId,
+          agent_id: (await params).agentId,
           timestamp: new Date().toISOString(),
         },
         error: {

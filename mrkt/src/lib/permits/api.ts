@@ -68,21 +68,21 @@ export async function updatePermitStatusApi(
   permitId: string,
   status: "active" | "expired" | "revoked"
 ): Promise<UserPermit> {
-  const response = await fetch(`/api/permits/${permitId}`, {
+  const response = await fetch("/api/permits", {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ permitId, status }),
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to update permit: ${response.statusText}`);
+    throw new Error(`Failed to update permit status: ${response.statusText}`);
   }
 
   const result = await response.json();
   if (!result.success) {
-    throw new Error(result.error || "Failed to update permit");
+    throw new Error(result.error || "Failed to update permit status");
   }
 
   return deserializePermitFromApi(result.permit);
